@@ -5,6 +5,13 @@ import yaml
 
 _log = logging.getLogger(__name__)
 _CONFIG: dict = {}
+_SUFFIX_KEYS = {
+    "category": "categories",
+    "channel": "text_channels",
+    "role": "roles",
+    "voice": "voice_channels",
+    "webhook": "webhooks",
+}
 
 
 def read_config(path: str = "config.yml") -> None:
@@ -21,3 +28,27 @@ def read_config(path: str = "config.yml") -> None:
             _CONFIG = yaml.safe_load(f)
 
     raise FileNotFoundError(f"No config found at path {path!r}")
+
+
+class ConfigMeta(type):
+
+    def __getattribute__(cls, name):
+        if name.startswith("_"):
+            # Normal behaviour for private attributes.
+            return super().__getattribute__(name)
+
+        # Split to get the suffix, which may determine where to find the config value.
+        split_name = name.rsplit("_", 1)
+
+        try:
+            if len(split_name) > 1 and (key := _SUFFIX_KEYS.get(split_name[1])):
+                # Look for the value under the corresponding guild key for the suffix.
+                guild = _CONFIG["guild"] or {}  # Avoid TypeErrors when it's None.
+                category = guild[key] or {}
+                return category[split_name[0]]
+            else:
+                # All other attributes are considered to be specific to the module.
+                category = _CONFIG[cls.__module__] or {}
+                return category[name]
+        except KeyError:
+            return super().__getattribute__(name)
