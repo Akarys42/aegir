@@ -52,3 +52,26 @@ class ConfigMeta(type):
                 return category[name]
         except KeyError:
             return super().__getattribute__(name)
+
+
+class GlobalConfigMeta(type):
+
+    def __new__(mcs, name, bases, namespace, **kwargs):
+        namespace["__parents__"] = kwargs.pop("parents", ())
+        return super().__new__(mcs, name, bases, namespace)
+
+    def __getattribute__(cls, name):
+        if name.startswith("_"):
+            # Normal behaviour for private attributes.
+            return super().__getattribute__(name)
+
+        try:
+            # Get the closest parent node from the fully qualified path.
+            parent = _CONFIG
+            for node in cls.__parents__:
+                parent = parent[node]
+
+            # Class name is the final qualifier before the attribute name itself.
+            return parent[cls.__name__.lower()][name]
+        except KeyError:
+            return super().__getattribute__(name)
