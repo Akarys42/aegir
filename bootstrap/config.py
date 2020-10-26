@@ -30,24 +30,27 @@ def _get_config_objects(bot) -> Iterator[object]:
             yield obj
 
 
-def _read_config(path: str) -> Optional[dict]:
+def _read_config(path: str) -> dict:
     """
     Read the YAML config file at `path` and return its deserialised content.
 
-    Return None if the file does not exist.
+    Raise FileNotFoundError if the file does not exist.
     """
     path = Path(path)
     if path.is_file():
         with path.open(encoding="utf-8") as f:
             return yaml.safe_load(f)
 
+    raise FileNotFoundError(f"No config found at path {path!r}")
+
 
 def load_config(bot, path: str = _CONFIG_PATH) -> None:
-    """Populate attributes of all config objects with values from the file at `path`."""
-    if (user_config := _read_config(path)) is None:
-        _log.info(f"No config found at path {path!r}")
-        return
+    """
+    Populate attributes of all config objects with values from the config file at `path`.
 
+    Raise FileNotFoundError if the config file does not exist.
+    """
+    user_config = _read_config(path)
     for obj in _get_config_objects(bot):
         # TODO: throw a warning for unset attributes (i.e. only have a type annotation)?
         for name in vars(obj):
