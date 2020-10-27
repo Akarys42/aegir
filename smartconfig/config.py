@@ -82,8 +82,8 @@ class GlobalConfigMeta(type):
 
     def __new__(mcs, name, bases, namespace, **kwargs):
         namespace["__parents__"] = kwargs.pop("parents", ())
+        namespace["__node_name__"] = mcs._CAMEL_TO_SNAKE_RE.sub(r"_\1", name).lower()
         cls = super().__new__(mcs, name, bases, namespace)
-        cls_name = cls._CAMEL_TO_SNAKE_RE.sub(r"_\1", cls.__name__).lower()
 
         for name, value in vars(cls).items():
             if name.startswith("_"):
@@ -93,7 +93,7 @@ class GlobalConfigMeta(type):
             for node_name in cls.__parents__:
                 node = node.setdefault(node_name, {})
 
-            node.setdefault(cls_name, {})[name] = value
+            node.setdefault(cls.__node_name__, {})[name] = value
 
         return cls
 
@@ -103,9 +103,7 @@ class GlobalConfigMeta(type):
             return super().__getattribute__(name)
 
         try:
-            # Class name is the final qualifier before the attribute name itself.
-            cls_name = cls._CAMEL_TO_SNAKE_RE.sub(r"_\1", cls.__name__).lower()
-            return _get_node(*cls.__parents__, cls_name, name)
+            return _get_node(*cls.__parents__, cls.__node_name__, name)
         except KeyError:
             return super().__getattribute__(name)
 
