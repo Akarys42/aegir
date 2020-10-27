@@ -1,4 +1,5 @@
 import logging
+import re
 from pathlib import Path
 from typing import Any
 
@@ -54,6 +55,10 @@ class ConfigMeta(type):
 
 class GlobalConfigMeta(type):
 
+    # By nickl- from https://stackoverflow.com/a/12867228/
+    # Only guaranteed to work with ASCII names.
+    _CAMEL_TO_SNAKE_RE = re.compile("((?<=[a-z0-9])[A-Z]|(?!^)[A-Z](?=[a-z]))")
+
     def __new__(mcs, name, bases, namespace, **kwargs):
         namespace["__parents__"] = kwargs.pop("parents", ())
         return super().__new__(mcs, name, bases, namespace)
@@ -65,7 +70,8 @@ class GlobalConfigMeta(type):
 
         try:
             # Class name is the final qualifier before the attribute name itself.
-            return _get_node(*cls.__parents__, cls.__name__.lower(), name)
+            cls_name = cls._CAMEL_TO_SNAKE_RE.sub(r"_\1", cls.__name__).lower()
+            return _get_node(*cls.__parents__, cls_name, name)
         except KeyError:
             return super().__getattribute__(name)
 
