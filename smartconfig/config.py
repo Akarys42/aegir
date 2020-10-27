@@ -7,6 +7,7 @@ import yaml
 
 _log = logging.getLogger(__name__)
 _CONFIG: dict = {}
+_CONFIG_DEFAULT: dict = {}
 _SUFFIX_NODES = {
     "category": ("guild", "categories"),
     "channel": ("guild", "text_channels"),
@@ -35,6 +36,25 @@ def read_config(path: str = "config.yml") -> None:
 
 class ConfigMeta(type):
 
+    def __new__(mcs, name, bases, namespace):
+        cls = super().__new__(mcs, name, bases, namespace)
+
+        for name, value in vars(cls).items():
+            if name.startswith("_"):
+                continue
+
+            split_name = name.rsplit("_", 1)
+            if len(split_name) > 1 and (node_path := _SUFFIX_NODES.get(split_name[1])):
+                node = _CONFIG_DEFAULT
+                for node_name in node_path:
+                    node = node.setdefault(node_name, {})
+
+                node[split_name[0]] = value
+            else:
+                _CONFIG_DEFAULT.setdefault(cls.__module__, {})[name] = value
+
+        return cls
+
     def __getattribute__(cls, name):
         if name.startswith("_"):
             # Normal behaviour for private attributes.
@@ -62,7 +82,20 @@ class GlobalConfigMeta(type):
 
     def __new__(mcs, name, bases, namespace, **kwargs):
         namespace["__parents__"] = kwargs.pop("parents", ())
-        return super().__new__(mcs, name, bases, namespace)
+        cls = super().__new__(mcs, name, bases, namespace)
+        cls_name = cls._CAMEL_TO_SNAKE_RE.sub(r"_\1", cls.__name__).lower()
+
+        for name, value in vars(cls).items():
+            if name.startswith("_"):
+                continue
+
+            node = _CONFIG_DEFAULT
+            for node_name in cls.__parents__:
+                node = node.setdefault(node_name, {})
+
+            node.setdefault(cls_name, {})[name] = value
+
+        return cls
 
     def __getattribute__(cls, name):
         if name.startswith("_"):
