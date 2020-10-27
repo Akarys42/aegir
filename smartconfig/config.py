@@ -6,12 +6,12 @@ import yaml
 
 _log = logging.getLogger(__name__)
 _CONFIG: dict = {}
-_SUFFIX_KEYS = {
-    "category": "categories",
-    "channel": "text_channels",
-    "role": "roles",
-    "voice": "voice_channels",
-    "webhook": "webhooks",
+_SUFFIX_NODES = {
+    "category": ("guild", "categories"),
+    "channel": ("guild", "text_channels"),
+    "role": ("guild", "roles"),
+    "voice": ("guild", "voice_channels"),
+    "webhook": ("guild", "webhooks"),
 }
 
 
@@ -42,11 +42,8 @@ class ConfigMeta(type):
         split_name = name.rsplit("_", 1)
 
         try:
-            if len(split_name) > 1 and (key := _SUFFIX_KEYS.get(split_name[1])):
-                # Look for the value under the corresponding guild key for the suffix.
-                guild = _CONFIG["guild"] or {}  # Avoid TypeErrors when it's None.
-                category = guild[key] or {}
-                return category[split_name[0]]
+            if len(split_name) > 1 and (node_path := _SUFFIX_NODES.get(split_name[1])):
+                return _get_node(*node_path, split_name[0])
             else:
                 # All other attributes are considered to be specific to the module.
                 category = _CONFIG[cls.__module__] or {}
