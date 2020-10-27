@@ -10,6 +10,7 @@ _CONFIG: dict = {}
 _SUFFIX_NODES = {
     "category": ("guild", "categories"),
     "channel": ("guild", "text_channels"),
+    "emoji": ("style", "emojis"),
     "role": ("guild", "roles"),
     "voice": ("guild", "voice_channels"),
     "webhook": ("guild", "webhooks"),
