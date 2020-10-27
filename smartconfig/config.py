@@ -1,5 +1,6 @@
 import logging
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -66,12 +67,22 @@ class GlobalConfigMeta(type):
             return super().__getattribute__(name)
 
         try:
-            # Get the closest parent node from the fully qualified path.
-            parent = _CONFIG
-            for node in cls.__parents__:
-                parent = parent[node]
-
             # Class name is the final qualifier before the attribute name itself.
-            return parent[cls.__name__.lower()][name]
+            return _get_node(*cls.__parents__, cls.__name__.lower(), name)
         except KeyError:
             return super().__getattribute__(name)
+
+
+def _get_node(*path: str) -> Any:
+    """
+    Return the node in the config under the given fully qualified `path`.
+
+    `path` should be node names in the order parent -> child (excluding the root config node).
+
+    Raise KeyError if the node cannot be found.
+    """
+    node = _CONFIG
+    for name in path:
+        # Avoid a TypeError in case the node had an empty value and thus was None.
+        node = (node or {})[name]
+    return node
