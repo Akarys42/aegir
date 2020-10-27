@@ -45,10 +45,7 @@ class ConfigMeta(type):
 
             split_name = name.rsplit("_", 1)
             if len(split_name) > 1 and (node_path := _SUFFIX_NODES.get(split_name[1])):
-                node = _CONFIG_DEFAULT
-                for node_name in node_path:
-                    node = node.setdefault(node_name, {})
-
+                node = _get_node(_CONFIG_DEFAULT, *node_path, setdefault=True)
                 node[split_name[0]] = value
             else:
                 _CONFIG_DEFAULT.setdefault(cls.__module__, {})[name] = value
@@ -65,7 +62,7 @@ class ConfigMeta(type):
 
         try:
             if len(split_name) > 1 and (node_path := _SUFFIX_NODES.get(split_name[1])):
-                return _get_node(*node_path, split_name[0])
+                return _get_node(_CONFIG, *node_path, split_name[0])
             else:
                 # All other attributes are considered to be specific to the module.
                 category = _CONFIG[cls.__module__] or {}
@@ -89,11 +86,8 @@ class GlobalConfigMeta(type):
             if name.startswith("_"):
                 continue
 
-            node = _CONFIG_DEFAULT
-            for node_name in cls.__parents__:
-                node = node.setdefault(node_name, {})
-
-            node.setdefault(cls.__node_name__, {})[name] = value
+            node = _get_node(_CONFIG_DEFAULT, *cls.__parents__, cls.__node_name__, setdefault=True)
+            node[name] = value
 
         return cls
 
@@ -103,21 +97,25 @@ class GlobalConfigMeta(type):
             return super().__getattribute__(name)
 
         try:
-            return _get_node(*cls.__parents__, cls.__node_name__, name)
+            return _get_node(_CONFIG, *cls.__parents__, cls.__node_name__, name)
         except KeyError:
             return super().__getattribute__(name)
 
 
-def _get_node(*path: str) -> Any:
+def _get_node(root: dict, *path: str, setdefault: bool = False) -> Any:
     """
-    Return the node in the config under the given fully qualified `path`.
+    Return the node in `root` under the given fully qualified `path`.
 
     `path` should be node names in the order parent -> child (excluding the root config node).
 
-    Raise KeyError if the node cannot be found.
+    If `setdefault` is True, create new nested dictionaries for missing nodes.
+    Otherwise, raise KeyError if the node on the path cannot be found.
     """
-    node = _CONFIG
+    node = root
     for name in path:
-        # Avoid a TypeError in case the node had an empty value and thus was None.
-        node = (node or {})[name]
+        if setdefault:
+            node = node.setdefault(name, {})
+        else:
+            # Avoid a TypeError in case the node had an empty value and thus was None.
+            node = (node or {})[name]
     return node
