@@ -62,11 +62,15 @@ class ConfigMeta(type):
 
         try:
             if len(split_name) > 1 and (node_path := _SUFFIX_NODES.get(split_name[1])):
-                return _get_node(_CONFIG, *node_path, split_name[0])
+                value = _get_node(_CONFIG, *node_path, split_name[0])
             else:
                 # All other attributes are considered to be specific to the module.
-                category = _CONFIG[cls.__module__] or {}
-                return category[name]
+                value = _get_node(_CONFIG, cls.__module__, name)
+
+            if hasattr(value, "__get__"):
+                return value.__get__(None, cls)
+            else:
+                return value
         except KeyError:
             return super().__getattribute__(name)
 
@@ -97,7 +101,11 @@ class GlobalConfigMeta(type):
             return super().__getattribute__(name)
 
         try:
-            return _get_node(_CONFIG, *cls.__parents__, cls.__node_name__, name)
+            value = _get_node(_CONFIG, *cls.__parents__, cls.__node_name__, name)
+            if hasattr(value, "__get__"):
+                return value.__get__(None, cls)
+            else:
+                return value
         except KeyError:
             return super().__getattribute__(name)
 
