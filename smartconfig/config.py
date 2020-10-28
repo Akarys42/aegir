@@ -38,13 +38,26 @@ def read_config(path: str = "config.yml") -> None:
 
 class _ConfigMetaBase(type):
 
+    def __new__(mcs, name, bases, namespace):
+        cls = super().__new__(mcs, name, bases, namespace)
+
+        for name, value in vars(cls).items():
+            if not name.startswith("_"):
+                node_path, final_node = cls._get_node_path(name)
+                node = _get_node(_CONFIG_DEFAULT, *node_path, setdefault=True)
+                node[final_node] = value
+
+        return cls
+
     def __getattribute__(cls, name):
         if name.startswith("_"):
             # Normal behaviour for private attributes.
             return super().__getattribute__(name)
 
         try:
-            value = cls.__get_node__(name)
+            node_path, final_node = cls._get_node_path(name)
+            value = _get_node(_CONFIG, *node_path, final_node)
+
             if hasattr(value, "__get__"):
                 return value.__get__(None, cls)
             else:
@@ -55,31 +68,15 @@ class _ConfigMetaBase(type):
 
 class ConfigMeta(_ConfigMetaBase):
 
-    def __new__(mcs, name, bases, namespace):
-        cls = super().__new__(mcs, name, bases, namespace)
-
-        for name, value in vars(cls).items():
-            if name.startswith("_"):
-                continue
-
-            split_name = name.rsplit("_", 1)
-            if len(split_name) > 1 and (node_path := _SUFFIX_NODES.get(split_name[1])):
-                node = _get_node(_CONFIG_DEFAULT, *node_path, setdefault=True)
-                node[split_name[0]] = value
-            else:
-                _CONFIG_DEFAULT.setdefault(cls.__module__, {})[name] = value
-
-        return cls
-
-    def __get_node__(cls, name):
+    def _get_node_path(cls, name):
         # Split to get the suffix, which may determine where to find the config value.
         split_name = name.rsplit("_", 1)
 
         if len(split_name) > 1 and (node_path := _SUFFIX_NODES.get(split_name[1])):
-            return _get_node(_CONFIG, *node_path, split_name[0])
+            return node_path, split_name[0]
         else:
             # All other attributes are considered to be specific to the module.
-            return _get_node(_CONFIG, cls.__module__, name)
+            return (cls.__module__,), name
 
 
 class GlobalConfigMeta(_ConfigMetaBase):
@@ -91,19 +88,10 @@ class GlobalConfigMeta(_ConfigMetaBase):
     def __new__(mcs, name, bases, namespace, **kwargs):
         namespace["__parents__"] = kwargs.pop("parents", ())
         namespace["__node_name__"] = mcs._CAMEL_TO_SNAKE_RE.sub(r"_\1", name).lower()
-        cls = super().__new__(mcs, name, bases, namespace)
+        return super().__new__(mcs, name, bases, namespace)
 
-        for name, value in vars(cls).items():
-            if name.startswith("_"):
-                continue
-
-            node = _get_node(_CONFIG_DEFAULT, *cls.__parents__, cls.__node_name__, setdefault=True)
-            node[name] = value
-
-        return cls
-
-    def __get_node__(cls, name):
-        return _get_node(_CONFIG, *cls.__parents__, cls.__node_name__, name)
+    def _get_node_path(cls, name):
+        return (*cls.__parents__, cls.__node_name__), name
 
 
 class _Reference:
