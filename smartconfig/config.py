@@ -102,6 +102,29 @@ class GlobalConfigMeta(type):
             return super().__getattribute__(name)
 
 
+class _Reference:
+
+    def __init__(self, node_path: str):
+        self.node_path = node_path
+        self.node_names = node_path.split("/")
+
+    def __get__(self, *args):
+        try:
+            return _get_node(_CONFIG, *self.node_names)
+        except KeyError:
+            try:
+                return _get_node(_CONFIG_DEFAULT, *self.node_names)
+            except KeyError:
+                raise AttributeError(f"Cannot resolve node reference {self.node_path!r}")
+
+    def __set__(self, instance, value) -> None:
+        node = _get_node(_CONFIG, *self.node_names[:-1], setdefault=True)
+        node[self.node_names[-1]] = value
+
+    def __repr__(self):
+        return f"<{self.__class__.__name__} descriptor with node_path={self.node_path!r}>"
+
+
 def _get_node(root: dict, *path: str, setdefault: bool = False) -> Any:
     """
     Return the node in `root` under the given fully qualified `path`.
@@ -119,3 +142,10 @@ def _get_node(root: dict, *path: str, setdefault: bool = False) -> Any:
             # Avoid a TypeError in case the node had an empty value and thus was None.
             node = (node or {})[name]
     return node
+
+
+def _ref_constructor(loader: yaml.SafeLoader, node: yaml.Node) -> _Reference:
+    return _Reference(node.value)
+
+
+yaml.SafeLoader.add_constructor("!REF", _ref_constructor)
