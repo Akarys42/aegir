@@ -34,7 +34,24 @@ def read_config(path: str = "config.yml") -> None:
     raise FileNotFoundError(f"No config found at path {path!r}")
 
 
-class ConfigMeta(type):
+class _ConfigMetaBase(type):
+
+    def __getattribute__(cls, name):
+        if name.startswith("_"):
+            # Normal behaviour for private attributes.
+            return super().__getattribute__(name)
+
+        try:
+            value = cls.__get_node__(name)
+            if hasattr(value, "__get__"):
+                return value.__get__(None, cls)
+            else:
+                return value
+        except KeyError:
+            return super().__getattribute__(name)
+
+
+class ConfigMeta(_ConfigMetaBase):
 
     def __new__(mcs, name, bases, namespace):
         cls = super().__new__(mcs, name, bases, namespace)
@@ -52,30 +69,18 @@ class ConfigMeta(type):
 
         return cls
 
-    def __getattribute__(cls, name):
-        if name.startswith("_"):
-            # Normal behaviour for private attributes.
-            return super().__getattribute__(name)
-
+    def __get_node__(cls, name):
         # Split to get the suffix, which may determine where to find the config value.
         split_name = name.rsplit("_", 1)
 
-        try:
-            if len(split_name) > 1 and (node_path := _SUFFIX_NODES.get(split_name[1])):
-                value = _get_node(_CONFIG, *node_path, split_name[0])
-            else:
-                # All other attributes are considered to be specific to the module.
-                value = _get_node(_CONFIG, cls.__module__, name)
-
-            if hasattr(value, "__get__"):
-                return value.__get__(None, cls)
-            else:
-                return value
-        except KeyError:
-            return super().__getattribute__(name)
+        if len(split_name) > 1 and (node_path := _SUFFIX_NODES.get(split_name[1])):
+            return _get_node(_CONFIG, *node_path, split_name[0])
+        else:
+            # All other attributes are considered to be specific to the module.
+            return _get_node(_CONFIG, cls.__module__, name)
 
 
-class GlobalConfigMeta(type):
+class GlobalConfigMeta(_ConfigMetaBase):
 
     # By nickl- from https://stackoverflow.com/a/12867228/
     # Only guaranteed to work with ASCII names.
@@ -95,19 +100,8 @@ class GlobalConfigMeta(type):
 
         return cls
 
-    def __getattribute__(cls, name):
-        if name.startswith("_"):
-            # Normal behaviour for private attributes.
-            return super().__getattribute__(name)
-
-        try:
-            value = _get_node(_CONFIG, *cls.__parents__, cls.__node_name__, name)
-            if hasattr(value, "__get__"):
-                return value.__get__(None, cls)
-            else:
-                return value
-        except KeyError:
-            return super().__getattribute__(name)
+    def __get_node__(cls, name):
+        return _get_node(_CONFIG, *cls.__parents__, cls.__node_name__, name)
 
 
 class _Reference:
