@@ -26,7 +26,7 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Topic :: Software Development :: Libraries :: Python Modules",
     ],
-    python_requires='~=3.8, ~=3.9',
+    python_requires='>=3.8',
     include_package_data=True,
     zip_safe=False
 )
