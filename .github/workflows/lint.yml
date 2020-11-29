@@ -39,17 +39,6 @@ jobs:
       - name: Install dev requirements
         run: pip install -r dev-requirements.txt
       
-      # This step caches our pip environment. To make sure we
-      # do create a new environment when our pre-commit setup changes,
-      # we create a cache key based on relevant factors.
-      - name: Cache pip cache
-        uses: actions/cache@v2
-        with:
-          path: $(pip cache dir)
-          key: "precommit-0-${{ runner.os }}-\
-          ${{ steps.python.outputs.python-version }}-\
-          ${{ hashFiles('./.pre-commit-config.yaml') }}"
-      
       # Run our flake8 toolchain. 
       - name: Run flake8
         run: flake8
