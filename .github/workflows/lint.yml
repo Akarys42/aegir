@@ -1,0 +1,55 @@
+name: Lint
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python_version: ['3.8.6', 3.9.0']
+
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Setup Python
+        id: python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python_version }}
+      
+      # This step caches our Python dependencies. To make sure we
+      # only restore a cache when the dependencies, the python version and
+      # the runner operating system we create a cache key 
+      # that is a composite of those states.
+      # Only when the context is exactly the same, we will restore the cache.
+      - name: Restore pip cache
+        uses: actions/cache@v2
+        with:
+          path: $(pip cache dir)
+          key: "python-0-${{ runner.os }}-\
+          ${{ steps.python.outputs.python-version }}-\
+          ${{ hashFiles('./Pipfile', './Pipfile.lock') }}"
+      
+      # Install pip dependency. 
+      - name: Install dev requirements
+        run: pip install -r dev-requirements.txt
+      
+      # This step caches our pip environment. To make sure we
+      # do create a new environment when our pre-commit setup changes,
+      # we create a cache key based on relevant factors.
+      - name: Cache pip cache
+        uses: actions/cache@v2
+        with:
+          path: $(pip cache dir)
+          key: "precommit-0-${{ runner.os }}-\
+          ${{ steps.python.outputs.python-version }}-\
+          ${{ hashFiles('./.pre-commit-config.yaml') }}"
+      
+      # Run our flake8 toolchain. 
+      - name: Run flake8
+        run: flake8
