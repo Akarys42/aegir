@@ -33,7 +33,7 @@ jobs:
           path: $(pip cache dir)
           key: "python-0-${{ runner.os }}-\
           ${{ steps.python.outputs.python-version }}-\
-          ${{ hashFiles('./Pipfile', './Pipfile.lock') }}"
+          ${{ hashFiles('./dev-requirements.txt') }}"
       
       # Install pip dependency. 
       - name: Install dev requirements
