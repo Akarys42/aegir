@@ -12,6 +12,9 @@ jobs:
     strategy:
       matrix:
         python_version: ['3.8.6', '3.9.0']
+    
+    env:
+      PIPCACHEDIR: /tmp/pip-cache-dir
 
     steps:
       - uses: actions/checkout@v2
@@ -30,14 +33,14 @@ jobs:
       - name: Restore pip cache
         uses: actions/cache@v2
         with:
-          path: $(pip cache dir)
+          path: ${{ env.PIPCACHEDIR }}
           key: "python-0-${{ runner.os }}-\
           ${{ steps.python.outputs.python-version }}-\
           ${{ hashFiles('./dev-requirements.txt') }}"
       
       # Install pip dependency. 
       - name: Install dev requirements
-        run: pip install -r dev-requirements.txt
+        run: pip install -r dev-requirements.txt --cache-dir $PIPCACHEDIR
       
       # Run our flake8 toolchain. 
       - name: Run flake8
