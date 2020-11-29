@@ -1,0 +1,32 @@
+name: Publish package to PyPi
+
+on:
+  push:
+    branches: [ add-release-workflow, release ]
+    #TODO: remove add-release-workflow
+
+  workflow_dispatch:
+
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Setup Python
+        id: python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8.6
+
+      # Install the needed build tools
+      - name: Install build tools
+        run: pip install setuptools wheel twine
+
+      # Build and upload 
+      - name: Build and upload
+        run: |
+          python setup.py sdist bdist_wheel
+          python -m twine upload -u $PYPI_USERNAME -p $PYPI_PASSWORD --repository testpypi dist/*
+          #TODO: switch to production PyPi
