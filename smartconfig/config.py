@@ -32,8 +32,8 @@ def read_config(path: str = "config.yml") -> None:
     if path.is_file():
         with path.open(encoding="utf-8") as f:
             _CONFIG = yaml.safe_load(f)
-
-    raise FileNotFoundError(f"No config found at path {path!r}")
+    else:
+        raise FileNotFoundError(f"No config found at path {path!r}")
 
 
 class _ConfigMetaBase(type):
