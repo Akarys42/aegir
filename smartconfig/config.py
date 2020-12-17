@@ -1,7 +1,7 @@
 import logging
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, Tuple
 
 import yaml
 
@@ -37,19 +37,34 @@ def read_config(path: str = "config.yml") -> None:
 
 
 class _ConfigMetaBase(type):
+    """
+    Base for config metaclasses which maps default values and retrieves configured values.
+
+    Subclasses need to implement a `_get_node_path` function which translates an attribute name to
+    a tuple of a parent YAML node path and a final node name.
+    """
 
     def __new__(mcs, name, bases, namespace):
         cls = super().__new__(mcs, name, bases, namespace)
 
+        # Map all public attributes to the _CONFIG_DEFAULT dictionary.
+        # The _Reference descriptor relies on this dictionary to function.
         for name, value in vars(cls).items():
+            # Skip private names.
             if not name.startswith("_"):
                 node_path, final_node = cls._get_node_path(name)
-                node = _get_node(_CONFIG_DEFAULT, *node_path, setdefault=True)
-                node[final_node] = value
+                parent_node = _get_node(_CONFIG_DEFAULT, *node_path, setdefault=True)
+                parent_node[final_node] = value
 
         return cls
 
-    def __getattribute__(cls, name):
+    def __getattribute__(cls, name: str) -> Any:
+        """
+        Return the value for the attribute `name` from the loaded config file.
+
+        Attributes prefixed with "_" use the default `__getattribute__`. The default is also used
+        if the attribute is not found in the loaded config.
+        """
         if name.startswith("_"):
             # Normal behaviour for private attributes.
             return super().__getattribute__(name)
@@ -58,17 +73,32 @@ class _ConfigMetaBase(type):
             node_path, final_node = cls._get_node_path(name)
             value = _get_node(_CONFIG, *node_path, final_node)
 
+            # Use __get__ if the value is a descriptor (like _Reference).
             if hasattr(value, "__get__"):
                 return value.__get__(None, cls)
             else:
                 return value
         except KeyError:
+            # Rely on default behaviour to return the default value (or raise an error).
             return super().__getattribute__(name)
 
 
 class ConfigMeta(_ConfigMetaBase):
+    """
+    A metaclass which registers a class as a module-specific configuration.
 
-    def _get_node_path(cls, name):
+    All public attributes of the class are mapped to YAML along with their default values.
+    Attributes without default values (i.e. only annotated) are completely ignored. The YAML mapping
+    exists internally; it is not written to any file. This facilitates the overriding of default
+    values through the YAML file loaded by `read_config`.
+    """
+
+    def _get_node_path(cls, name: str) -> Tuple[Tuple[str, ...], str]:
+        """
+        Convert an attribute `name` to a parent YAML node path and a final node name.
+
+        Try to use `_SUFFIX_NODES` to create the path. Otherwise, use the module's name as the path.
+        """
         # Split to get the suffix, which may determine where to find the config value.
         split_name = name.rsplit("_", 1)
 
@@ -80,6 +110,36 @@ class ConfigMeta(_ConfigMetaBase):
 
 
 class GlobalConfigMeta(_ConfigMetaBase):
+    """
+    A metaclass which registers a class as a global configuration.
+
+    All public attributes of the class are mapped to YAML along with their default values.
+    Attributes without default values (i.e. only annotated) are completely ignored. The YAML mapping
+    exists internally; it is not written to any file. This facilitates the overriding of default
+    values through the YAML file loaded by `read_config`.
+
+    The attributes are mapped under a node named after the class. The class name is converted to
+    snake case when mapped to YAML.
+
+    By default, the class node is placed under the root YAML node. However, this can be customised
+    through the optional `parents` parameter. It expects an iterable of parent node names ordered
+    from parent -> child.
+
+    Example:
+
+    class MyClass(metaclass=GlobalConfigMeta, parents=("parent_one", "parent_two")):
+        attribute_1: int = 123
+        attribute_2: str = "hello"
+        _private: str = "secret!"
+
+    becomes the following YAML
+
+    parent_one:
+        parent_two:
+            my_class:
+                attribute_1: 123
+                attribute_2: 'hello'
+    """
 
     # By nickl- from https://stackoverflow.com/a/12867228/
     # Only guaranteed to work with ASCII names.
@@ -90,17 +150,34 @@ class GlobalConfigMeta(_ConfigMetaBase):
         namespace["__node_name__"] = mcs._CAMEL_TO_SNAKE_RE.sub(r"_\1", name).lower()
         return super().__new__(mcs, name, bases, namespace)
 
-    def _get_node_path(cls, name):
+    def _get_node_path(cls, name: str) -> Tuple[Tuple[str, ...], str]:
+        """
+        Convert an attribute `name` to a parent YAML node path and a final node name.
+
+        The node path consists of any given parent nodes and the class name. The final node name is
+        the same as the attribute `name`.
+        """
         return (*cls.__parents__, cls.__node_name__), name
 
 
 class _Reference:
+    """
+    A descriptor which references another node in the YAML config.
+
+    The given node path should be node names in the order parent -> child and delimited by a '/'.
+    """
 
     def __init__(self, node_path: str):
         self.node_path = node_path
         self.node_names = node_path.split("/")
 
-    def __get__(self, *args):
+    def __get__(self, *args) -> Any:
+        """
+        Return the value of the referenced node.
+
+        Attempt to get the node from the user's config. If not found, then try the default config.
+        Raise an AttributeError if not found.
+        """
         try:
             return _get_node(_CONFIG, *self.node_names)
         except KeyError:
@@ -110,8 +187,9 @@ class _Reference:
                 raise AttributeError(f"Cannot resolve node reference {self.node_path!r}")
 
     def __set__(self, instance, value) -> None:
-        node = _get_node(_CONFIG, *self.node_names[:-1], setdefault=True)
-        node[self.node_names[-1]] = value
+        """Set the value of the referenced node."""
+        parent_node = _get_node(_CONFIG, *self.node_names[:-1], setdefault=True)
+        parent_node[self.node_names[-1]] = value
 
     def __repr__(self):
         return f"<{self.__class__.__name__} descriptor with node_path={self.node_path!r}>"
@@ -137,6 +215,11 @@ def _get_node(root: dict, *path: str, setdefault: bool = False) -> Any:
 
 
 def _ref_constructor(loader: yaml.SafeLoader, node: yaml.Node) -> _Reference:
+    """
+    Return a descriptor which references another node.
+
+    `node` is the node whose value is used as a path to another node to reference.
+    """
     return _Reference(node.value)
 
 
