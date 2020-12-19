@@ -1,0 +1,33 @@
+[tool.flit.metadata]
+module = "smartconfig"
+author = "Python Discord"
+author-email = "staff@pythondiscord.com"
+home-page = "https://github.com/pythondiscord/smartconfig"
+description-file = "README.md"
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Topic :: Software Development :: Libraries :: Python Modules"
+]
+requires-python = ">=3.8"
+
+[tool.flit.metadata.requires-extra]
+dev = [
+    "flake8 ~= 3.8",
+    "flake8-annotations ~= 2.0",
+    "flake8-bugbear ~= 20.1",
+    "flake8-docstrings ~= 1.4",
+    "flake8-import-order ~= 0.18",
+    "flake8-string-format ~= 0.2",
+    "flake8-tidy-imports ~= 4.0",
+    "flake8-todo ~= 0.7",
+    "pep8-naming ~= 0.9"
+]
+
+[build-system]
+requires = ["flit_core >=2,<4"]
+build-backend = "flit_core.buildapi"
