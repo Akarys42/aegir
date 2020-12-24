@@ -1,5 +1,5 @@
-from typing import Dict, Any
+from typing import Dict, Union, List
 
-EntryType = Any
+EntryType = Union[List["EntryType"], Dict[str, "EntryType"], str, int, float]
 EntryMapping = Dict[str, EntryType]
 EntryMappingRegister = [Dict[str, EntryMapping]]
