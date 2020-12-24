@@ -2,8 +2,22 @@ import inspect
 from itertools import chain
 from typing import Dict, List, Optional
 
+from smartconfig.parser import YamlLikeParser
 from smartconfig.register import register
-from smartconfig.typehints import EntryType, EntryMapping
+from smartconfig.typehints import EntryType, EntryMapping, _FilePath
+
+
+def load_config_file(path: _FilePath) -> None:
+    with open(path) as file:
+        patch = YamlLikeParser(file.read()).parse()
+
+    for path, entries in patch.items():
+        if path in register.configuration_for_module:
+            register.configuration_for_module[path]._patch_entries(entries)
+
+        if path not in register.global_configuration:
+            register.global_configuration[path] = {}
+        register.global_configuration[path].update(entries)
 
 
 class ConfigEntryMeta(type):

@@ -2,6 +2,6 @@
 
 __version__ = "0.0.0-dev1"
 
-__all__ = ("ConfigEntry", )
+__all__ = ("ConfigEntry", "load_config_file")
 
-from smartconfig.configuration import ConfigEntry
+from smartconfig.configuration import ConfigEntry, load_config_file
