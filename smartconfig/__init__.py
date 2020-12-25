@@ -19,11 +19,11 @@ __all__ = (
 
 from smartconfig.configuration import ConfigEntry, load_config_file
 from smartconfig.exceptions import (
-    SmartconfigBaseException,
-    DuplicateConfiguration,
     ConfigurationKeyError,
+    DuplicateConfiguration,
     InvalidOperation,
-    MalformedYamlFile
+    MalformedYamlFile,
+    SmartconfigBaseException
 )
 from smartconfig.parser import YamlLikeParser
 from smartconfig.typehints import EntryType

@@ -1,5 +1,5 @@
 import os
-from typing import Dict, Union, List
+from typing import Dict, List, Union
 
 # The possible types of an entry.
 EntryType = Union[List["EntryType"], Dict[str, "EntryType"], str, int, float]

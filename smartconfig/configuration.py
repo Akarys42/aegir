@@ -1,11 +1,11 @@
 import inspect
 from itertools import chain
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from smartconfig.exceptions import ConfigurationKeyError, DuplicateConfiguration, InvalidOperation
 from smartconfig.parser import YamlLikeParser
 from smartconfig.register import _register
-from smartconfig.typehints import EntryType, _EntryMapping, _FilePath
+from smartconfig.typehints import _EntryMapping, _FilePath
 
 
 def load_config_file(path: _FilePath) -> None:
@@ -47,7 +47,7 @@ class _ConfigEntryMeta(type):
     Note: Using this metaclass outside of the library is currently not supported.
     """
 
-    def __getattribute__(self, item: str):
+    def __getattribute__(cls, item: str):
         """
         Special attribute lookup function.
 
@@ -60,19 +60,19 @@ class _ConfigEntryMeta(type):
             ConfigurationKeyError: The item doesn't exist.
             InvalidOperation: The metaclass is used outside of the library.
         """
-        if not type(self) == _ConfigEntryMeta:
+        if not type(cls) == _ConfigEntryMeta:
             raise InvalidOperation("Using _ConfigEntryMeta outside of ConfigEntry isn't currently supported.")
 
         # Use the normal lookup for attribute starting with `_`
         if item.startswith('_'):
             return super().__getattribute__(item)
 
-        if item not in self._configuration_mapping:
-            raise ConfigurationKeyError(f"Entry {self._path} doesn't define any {item} entry.")
+        if item not in cls._configuration_mapping:
+            raise ConfigurationKeyError(f"Entry {cls._path} doesn't define any {item} entry.")
 
-        return self._configuration_mapping[item]
+        return cls._configuration_mapping[item]
 
-    def __new__(mcs, name, bases, dict_):
+    def __new__(cls, name: str, bases: Tuple[type, ...], dict_: Dict[str, Any]) -> type:
         """Add special attribute to the new entry."""
         configuration_mapping = {key: value for key, value in dict_.items() if not key.startswith('_')}
         defined_entries = {
@@ -88,7 +88,7 @@ class _ConfigEntryMeta(type):
         dict_["_configuration_mapping"] = configuration_mapping
         dict_["_defined_entries"] = defined_entries
 
-        return super().__new__(mcs, name, bases, dict_)
+        return super().__new__(cls, name, bases, dict_)
 
 
 class ConfigEntry(metaclass=_ConfigEntryMeta):

@@ -2,10 +2,10 @@ import re
 import textwrap
 from ast import literal_eval
 from dataclasses import dataclass
-from typing import List, Optional, NoReturn
+from typing import List, NoReturn, Optional
 
 from smartconfig.exceptions import MalformedYamlFile
-from smartconfig.typehints import _EntryMappingRegister, EntryType
+from smartconfig.typehints import EntryType, _EntryMappingRegister
 
 TAB_SIZE = 4
 INDENT_RE = re.compile(r'^ +')
