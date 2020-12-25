@@ -76,9 +76,10 @@ class YamlLikeParser:
 
         remaining_lines = len(tuple(self.content_iterator))
         line_no = len(parsed_content) - remaining_lines
+        line = parsed_content[line_no - 1].strip()
 
-        exception = f"{message}:\n{self.source_file}:{line_no} | {parsed_content[line_no - 1].strip()}"
-        raise MalformedYamlFile(exception)
+        exception = f"{message}:\n{self.source_file}:{line_no} | {line}"
+        raise MalformedYamlFile(exception, self.source_file, line_no, line)
 
     def _process_indent(self, line: str) -> None:
         """
