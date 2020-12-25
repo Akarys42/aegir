@@ -4,8 +4,8 @@ from typing import Dict, List, Optional
 
 from smartconfig.exceptions import ConfigurationKeyError, DuplicateConfiguration, InvalidOperation
 from smartconfig.parser import YamlLikeParser
-from smartconfig.register import register
-from smartconfig.typehints import EntryType, EntryMapping, _FilePath
+from smartconfig.register import _register
+from smartconfig.typehints import EntryType, _EntryMapping, _FilePath
 
 
 def load_config_file(path: _FilePath) -> None:
@@ -13,16 +13,19 @@ def load_config_file(path: _FilePath) -> None:
         patch = YamlLikeParser(file.read(), file.name).parse()
 
     for path, entries in patch.items():
-        if path in register.configuration_for_module:
-            register.configuration_for_module[path]._patch_entries(entries)
+        if path in _register.configuration_for_module:
+            _register.configuration_for_module[path]._patch_entries(entries)
 
-        if path not in register.global_configuration:
-            register.global_configuration[path] = {}
-        register.global_configuration[path].update(entries)
+        if path not in _register.global_configuration:
+            _register.global_configuration[path] = {}
+        _register.global_configuration[path].update(entries)
 
 
-class ConfigEntryMeta(type):
+class _ConfigEntryMeta(type):
     def __getattribute__(self: "ConfigEntry", item: str):
+        if not type(self) is ConfigEntry:
+            raise InvalidOperation("Using _ConfigEntryMeta outside of ConfigEntry isn't currently supported.")
+
         if item.startswith('_'):
             return super().__getattribute__(item)
 
@@ -49,7 +52,7 @@ class ConfigEntryMeta(type):
         return super().__new__(mcs, name, bases, dict_)
 
 
-class ConfigEntry(metaclass=ConfigEntryMeta):
+class ConfigEntry(metaclass=_ConfigEntryMeta):
     _path: str
     _path_override: Optional[str] = None
 
@@ -59,15 +62,15 @@ class ConfigEntry(metaclass=ConfigEntryMeta):
     @classmethod
     def _initialize_class(cls):
         cls._path = cls._path_override or inspect.getmodule(cls).__name__
-        if cls._path in register.configuration_for_module:
+        if cls._path in _register.configuration_for_module:
             raise DuplicateConfiguration(f"The entry {cls._path} already exist.")  # TODO: Add an FAQ link.
 
-        register.configuration_for_module[cls._path] = cls
+        _register.configuration_for_module[cls._path] = cls
 
     @classmethod
     def _fetch_configuration(cls):
-        if cls._path in register.global_configuration:
-            cls._patch_entries(register.global_configuration[cls._path])
+        if cls._path in _register.global_configuration:
+            cls._patch_entries(_register.global_configuration[cls._path])
 
     @classmethod
     def _check_undefined_entries(cls):
@@ -76,7 +79,7 @@ class ConfigEntry(metaclass=ConfigEntryMeta):
                 raise ConfigurationKeyError(f"Entry {entry} isn't defined.")
 
     @classmethod
-    def _patch_entries(cls, patch: EntryMapping):
+    def _patch_entries(cls, patch: _EntryMapping):
         for key, value in patch.items():
             if key not in cls._defined_entries:
                 raise ConfigurationKeyError(f"Entry {cls._path} doesn't define any {key} entry.")

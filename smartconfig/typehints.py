@@ -2,7 +2,7 @@ import os
 from typing import Dict, Union, List
 
 EntryType = Union[List["EntryType"], Dict[str, "EntryType"], str, int, float]
-EntryMapping = Dict[str, EntryType]
-EntryMappingRegister = [Dict[str, EntryMapping]]
+_EntryMapping = Dict[str, EntryType]
+_EntryMappingRegister = [Dict[str, _EntryMapping]]
 
 _FilePath = Union[str, bytes, os.PathLike]

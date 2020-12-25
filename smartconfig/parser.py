@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import List, Optional, NoReturn
 
 from smartconfig.exceptions import MalformedYamlFile
-from smartconfig.typehints import EntryMappingRegister, EntryType
+from smartconfig.typehints import _EntryMappingRegister, EntryType
 
 TAB_SIZE = 4
 INDENT_RE = re.compile(r'^ +')
@@ -20,7 +20,7 @@ def _get_indent_size(line: str) -> int:
 
 
 @dataclass
-class TypeParseResult:
+class _TypeParseResult:
     result: EntryType
     parse_back: Optional[str]
 
@@ -37,7 +37,7 @@ class YamlLikeParser:
 
         self.indent_path: List[str] = []
 
-        self.parse_tree: EntryMappingRegister = {}
+        self.parse_tree: _EntryMappingRegister = {}
 
     def _abort(self, message: str) -> NoReturn:
         remaining_lines = len(tuple(self.content_iterator))
@@ -77,21 +77,21 @@ class YamlLikeParser:
         self.indent_path = self.indent_path[:-level]
         self.expected_indent_level -= level
 
-    def _parse_multiline_string(self) -> TypeParseResult:
+    def _parse_multiline_string(self) -> _TypeParseResult:
         buffer = ''
 
         while ':' not in _normalize_line((line := next(self.content_iterator))):
             buffer += '\n' + line
 
-        return TypeParseResult(textwrap.dedent(buffer), line)
+        return _TypeParseResult(textwrap.dedent(buffer), line)
 
-    def _parse_multiline_list(self, start_line: str) -> TypeParseResult:
+    def _parse_multiline_list(self, start_line: str) -> _TypeParseResult:
         buffer = [self._parse_simple(start_line[1:])]
 
         while _normalize_line((line := next(self.content_iterator))).startswith('-'):
             buffer.append(self._parse_simple(_normalize_line(line)[1:]))
 
-        return TypeParseResult(buffer, line)
+        return _TypeParseResult(buffer, line)
 
     def _parse_type(self, line: str) -> EntryType:
         if line == '|':
@@ -127,7 +127,7 @@ class YamlLikeParser:
                     self.parse_tree[path] = {}
                 self.parse_tree[path][name] = self._parse_type(value)
 
-    def parse(self) -> EntryMappingRegister:
+    def parse(self) -> _EntryMappingRegister:
         for line in self.content_iterator:
             self._process_indent(line)
             self._parse_line(_normalize_line(line))
