@@ -2,8 +2,9 @@ import re
 import textwrap
 from ast import literal_eval
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Optional, NoReturn
 
+from smartconfig.exceptions import MalformedYamlFile
 from smartconfig.typehints import EntryMappingRegister, EntryType
 
 TAB_SIZE = 4
@@ -25,9 +26,10 @@ class TypeParseResult:
 
 
 class YamlLikeParser:
-    def __init__(self, content: str) -> None:
+    def __init__(self, content: str, source_file: Optional[str] = "<input>") -> None:
         self.content = content.split('\n')
         self.content_iterator = filter(lambda line: len(line.strip()) > 0, iter(self.content))
+        self.source_file = source_file
 
         self.indent_size: Optional[int] = None
         self.indent_level: int = 0
@@ -36,6 +38,13 @@ class YamlLikeParser:
         self.indent_path: List[str] = []
 
         self.parse_tree: EntryMappingRegister = {}
+
+    def _abort(self, message: str) -> NoReturn:
+        remaining_lines = len(tuple(self.content_iterator))
+        line_no = len(self.content) - remaining_lines
+
+        exception = f"{message}:\n{self.source_file}:{line_no} | {self.content[line_no - 1].strip()}"
+        raise MalformedYamlFile(exception)
 
     def _process_indent(self, line: str) -> None:
         line = line.expandtabs(TAB_SIZE)
@@ -48,7 +57,7 @@ class YamlLikeParser:
 
             level, parity = divmod(size, self.indent_size)
             if parity != 0:
-                raise ...
+                self._abort("Indent size doesn't match indentation size")
 
             if level < self.indent_level:
                 self._dedent(self.indent_level - level)
@@ -57,7 +66,7 @@ class YamlLikeParser:
 
             if level > self.indent_level:
                 if level != self.expected_indent_level:
-                    raise ...
+                    self._abort("Unexpected indent")
                 self.indent_level = level
 
     def _indent(self, path: str) -> None:
@@ -97,15 +106,14 @@ class YamlLikeParser:
             self._parse_line(_normalize_line(result.parse_back))
         return result.result
 
-    @staticmethod
-    def _parse_simple(line: str) -> EntryType:
+    def _parse_simple(self, line: str) -> EntryType:
         try:
             return literal_eval(line)
-        except ValueError:
+        except (ValueError, SyntaxError):
             if line.isalnum():
                 return line
             else:
-                raise ...
+                self._abort(f"Failed to parse value {line}")
 
     def _parse_line(self, line: str):
         if ':' in line:

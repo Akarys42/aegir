@@ -2,6 +2,7 @@ import inspect
 from itertools import chain
 from typing import Dict, List, Optional
 
+from smartconfig.exceptions import ConfigurationKeyError, DuplicateConfiguration, InvalidOperation
 from smartconfig.parser import YamlLikeParser
 from smartconfig.register import register
 from smartconfig.typehints import EntryType, EntryMapping, _FilePath
@@ -9,7 +10,7 @@ from smartconfig.typehints import EntryType, EntryMapping, _FilePath
 
 def load_config_file(path: _FilePath) -> None:
     with open(path) as file:
-        patch = YamlLikeParser(file.read()).parse()
+        patch = YamlLikeParser(file.read(), file.name).parse()
 
     for path, entries in patch.items():
         if path in register.configuration_for_module:
@@ -26,7 +27,7 @@ class ConfigEntryMeta(type):
             return super().__getattribute__(item)
 
         if item not in self._configuration_mapping:
-            raise ...
+            raise ConfigurationKeyError(f"Entry {self._path} doesn't define any {item} entry.")
 
         return self._configuration_mapping[item]
 
@@ -59,7 +60,7 @@ class ConfigEntry(metaclass=ConfigEntryMeta):
     def _initialize_class(cls):
         cls._path = cls._path_override or inspect.getmodule(cls).__name__
         if cls._path in register.configuration_for_module:
-            raise ...
+            raise DuplicateConfiguration(f"The entry {cls._path} already exist.")  # TODO: Add an FAQ link.
 
         register.configuration_for_module[cls._path] = cls
 
@@ -72,13 +73,13 @@ class ConfigEntry(metaclass=ConfigEntryMeta):
     def _check_undefined_entries(cls):
         for entry in cls._defined_entries:
             if entry not in cls._configuration_mapping:
-                raise ...
+                raise ConfigurationKeyError(f"Entry {entry} isn't defined.")
 
     @classmethod
     def _patch_entries(cls, patch: EntryMapping):
         for key, value in patch.items():
             if key not in cls._defined_entries:
-                raise ...
+                raise ConfigurationKeyError(f"Entry {cls._path} doesn't define any {key} entry.")
 
             cls._configuration_mapping[key] = value
 
@@ -90,4 +91,4 @@ class ConfigEntry(metaclass=ConfigEntryMeta):
         cls._check_undefined_entries()
 
     def __init__(self):
-        raise ...
+        raise InvalidOperation("Creating instances of ConfigEntry isn't allowed.")
