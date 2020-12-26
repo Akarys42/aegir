@@ -55,7 +55,7 @@ class YamlLikeParser:
             source_file: Name of the file, used in error handling. `<input>` by default.
         """
         self.content = content
-        self.content_iterator = filter(lambda line: len(line.strip()) > 0, iter(self.content))
+        self.content_iterator = filter(lambda line: len(line.strip()) > 0, iter(self.content.split('\n')))
         self.source_file = source_file
 
         # Size of each indentation level.
@@ -71,7 +71,7 @@ class YamlLikeParser:
 
     def _abort(self, message: str) -> NoReturn:
         """Abort the parsing and raise `MalformedYamlFile` with the given message."""
-        # Tuple of every line taht could have been used in `content_iterator`
+        # Tuple of every line that could have been used in `content_iterator`
         parsed_content = tuple(filter(lambda line: len(line.strip()) > 0, self.content.split('\n')))
 
         remaining_lines = len(tuple(self.content_iterator))
@@ -151,11 +151,15 @@ class YamlLikeParser:
         """
         buffer = ''
 
-        while ':' not in _normalize_line((line := next(self.content_iterator))):
-            buffer += '\n' + line
+        try:
+            while ':' not in _normalize_line((line := next(self.content_iterator))):
+                buffer += '\n' + line
+        # We reached the end of the file.
+        except StopIteration:
+            line = None
 
         # We consumed one more line because we had to check if it contains a `:`, so we parse it back.
-        return _TypeParseResult(textwrap.dedent(buffer), line)
+        return _TypeParseResult(textwrap.dedent(buffer).strip('\n'), line)
 
     def _parse_multiline_list(self, start_line: str) -> _TypeParseResult:
         """
@@ -171,8 +175,12 @@ class YamlLikeParser:
         """
         buffer = [self._parse_simple(start_line[1:])]
 
-        while _normalize_line((line := next(self.content_iterator))).startswith('-'):
-            buffer.append(self._parse_simple(_normalize_line(line)[1:]))
+        try:
+            while _normalize_line((line := next(self.content_iterator))).startswith('-'):
+                buffer.append(self._parse_simple(_normalize_line(line)[1:]))
+        # We reached the end of the file.
+        except StopIteration:
+            line = None
 
         # We consumed one more line because we had to check if it started with `-`, so we parse it back.
         return _TypeParseResult(buffer, line)
@@ -239,20 +247,28 @@ class YamlLikeParser:
 
         Args:
             line: The line to parse. Should be normalized.
+
+        Raises:
+            MalformedYamlFile: Tried to set nodes on the root level or the line is malformed.
         """
-        # We skip lines without `:`
-        if ':' in line:
-            name, value = line.split(':', maxsplit=1)
+        # We error out on malformed lines
+        if ':' not in line and len(line) != 0:
+            self._abort("Malformed line")
 
-            # No value has been set here, it is probably an indent.
-            if not value:
-                self._indent(name)
-            else:
-                path = '.'.join(self.indent_path)
+        name, value = line.split(':', maxsplit=1)
 
-                if path not in self.parse_tree:
-                    self.parse_tree[path] = {}
-                self.parse_tree[path][name] = self._parse_type(value)
+        # No value has been set here, it is probably an indent.
+        if not value:
+            self._indent(name)
+        else:
+            path = '.'.join(self.indent_path)
+
+            if not path:
+                self._abort("Cannot set root level nodes")
+
+            if path not in self.parse_tree:
+                self.parse_tree[path] = {}
+            self.parse_tree[path][name] = self._parse_type(value)
 
     def parse(self) -> _EntryMappingRegister:
         """
