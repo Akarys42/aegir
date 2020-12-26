@@ -58,11 +58,7 @@ class _ConfigEntryMeta(type):
 
         Raises:
             ConfigurationKeyError: The item doesn't exist.
-            InvalidOperation: The metaclass is used outside of the library.
         """
-        if not type(cls) == _ConfigEntryMeta:
-            raise InvalidOperation("Using _ConfigEntryMeta outside of ConfigEntry isn't currently supported.")
-
         # Use the normal lookup for attribute starting with `_`
         if item.startswith('_'):
             return super().__getattribute__(item)
