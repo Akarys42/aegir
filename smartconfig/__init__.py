@@ -7,7 +7,7 @@ __all__ = (
     "ConfigEntry", "load_config_file",
 
     # Exceptions
-    "SmartconfigBaseException", "DuplicateConfiguration", "ConfigurationKeyError", "InvalidOperation",
+    "SmartconfigException", "DuplicateConfiguration", "ConfigurationKeyError", "InvalidOperation",
     "MalformedYamlFile",
 
     # Typehinting
@@ -21,6 +21,6 @@ from smartconfig.exceptions import (
     DuplicateConfiguration,
     InvalidOperation,
     MalformedYamlFile,
-    SmartconfigBaseException
+    SmartconfigException
 )
 from smartconfig.typehints import EntryType

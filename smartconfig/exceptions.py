@@ -1,24 +1,24 @@
-class SmartconfigBaseException(Exception):
+class SmartconfigException(Exception):
     """Base exception of `smartconfig` library."""
     pass
 
 
-class DuplicateConfiguration(ValueError, SmartconfigBaseException):
+class DuplicateConfiguration(ValueError, SmartconfigException):
     """Two configuration entries point to the same path. Use `_path_override` to bypass this restriction."""
     pass
 
 
-class ConfigurationKeyError(KeyError, SmartconfigBaseException):
+class ConfigurationKeyError(KeyError, SmartconfigException):
     """An invalid key name has been used."""
     pass
 
 
-class InvalidOperation(RuntimeError, SmartconfigBaseException):
+class InvalidOperation(RuntimeError, SmartconfigException):
     """An invalid operation has been performed."""
     pass
 
 
-class MalformedYamlFile(SyntaxError, SmartconfigBaseException):
+class MalformedYamlFile(SyntaxError, SmartconfigException):
     """
     The YAML-Like configuration file is malformed.
 

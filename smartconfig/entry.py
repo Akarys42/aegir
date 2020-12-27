@@ -1,6 +1,5 @@
-import inspect
 from itertools import chain
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, NoReturn, Optional, Tuple
 
 from smartconfig.exceptions import ConfigurationKeyError, DuplicateConfiguration, InvalidOperation
 from smartconfig.register import _register
@@ -37,43 +36,27 @@ class _ConfigEntryMeta(type):
 
     def __new__(cls, name: str, bases: Tuple[type, ...], dict_: Dict[str, Any]) -> type:
         """Add special attribute to the new entry."""
-        configuration_mapping = {key: value for key, value in dict_.items() if not key.startswith('_')}
-        defined_entries = {
-            name
-            for name
-            in chain(
-                dict_.keys(),
-                dict_.get('__annotations__', {}).keys()
-            )
-            if not name.startswith('_')
-        }
+        dict_["_configuration_mapping"] = {key: value for key, value in dict_.items() if not key.startswith('_')}
 
-        dict_["_configuration_mapping"] = configuration_mapping
-        dict_["_defined_entries"] = defined_entries
+        names = chain(dict_.keys(), dict_.get('__annotations__', {}).keys())
+        dict_["_defined_entries"] = {name for name in names if not name.startswith('_')}
 
         return super().__new__(cls, name, bases, dict_)
 
 
 class ConfigEntry(metaclass=_ConfigEntryMeta):
     """
-    Baseclass for new configuration entries.
+    Base class for new configuration entries.
 
-    Class attributes of the subclasses can be overwrote using YAML-like configuration files.
+    Class attributes of the subclasses can be overwritten using YAML configuration files.
     The entry will use its default values and potentially directly override them with already loaded configurations,
-    and will also be overwrote in future by newly loaded configurations.
+    and will also be overwritten in the future by newly loaded configurations.
 
-    The path used by an entry is by default the `__name__` attribute of the module it is defined in.
+    The default path used by an entry is the name of the module it is defined in.
 
     Attributes:
         _path_override:
             Can be used to override the default `_path` setting.
-        _path:
-            Path used to reference this entry in the configuration files. Shouldn't be manually set.
-        _configuration_mapping:
-            Current mapping of attributes. Shouldn't be manually set.
-        _defined_entries:
-            List of attributes being registered on the class,
-            either by giving a concrete value or a typehint. Shouldn't be manually set.
     """
 
     _path_override: Optional[str] = None
@@ -85,9 +68,9 @@ class ConfigEntry(metaclass=_ConfigEntryMeta):
     @classmethod
     def _register_entry(cls) -> None:
         """Set the `_path` attribute and register the entry."""
-        cls._path = cls._path_override or inspect.getmodule(cls).__name__
+        cls._path = cls._path_override or cls.__module__.__name__
         if cls._path in _register.configuration_for_module:
-            raise DuplicateConfiguration(f"The entry {cls._path} already exist.")  # TODO: Add an FAQ link.
+            raise DuplicateConfiguration(f"An entry at {cls._path} already exists.")  # TODO: Add an FAQ link.
 
         _register.configuration_for_module[cls._path] = cls
 
