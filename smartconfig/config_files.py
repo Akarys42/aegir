@@ -2,7 +2,7 @@ from typing import List
 
 import yaml
 
-from smartconfig.register import _register
+from smartconfig._registry import registry
 from smartconfig.typehints import _EntryMappingRegister, _FilePath
 
 
@@ -73,10 +73,10 @@ def load_config_file(path: _FilePath) -> None:
 
         for path, patch in restructured_yaml.items():
             # Patch every existing entries.
-            if path in _register.configuration_for_module:
-                _register.configuration_for_module[path]._patch_entries(patch)
+            if path in registry.configuration_for_module:
+                registry.configuration_for_module[path]._patch_entries(patch)
 
             # Update the global register for future entries to use.
-            if path not in _register.global_configuration:
-                _register.global_configuration[path] = {}
-            _register.global_configuration[path].update(patch)
+            if path not in registry.global_configuration:
+                registry.global_configuration[path] = {}
+            registry.global_configuration[path].update(patch)

@@ -4,7 +4,7 @@ import smartconfig
 from smartconfig.typehints import _EntryMappingRegister
 
 
-class _Register:
+class Registry:
     """
     Internal register used to reference entries.
 
@@ -19,4 +19,4 @@ class _Register:
 
 
 # Global register value shared across all entries and function calls.
-_register = _Register()
+registry = Registry()

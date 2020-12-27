@@ -2,7 +2,7 @@ from itertools import chain
 from typing import Any, Dict, List, NoReturn, Optional, Tuple
 
 from smartconfig.exceptions import ConfigurationKeyError, DuplicateConfiguration, InvalidOperation
-from smartconfig.register import _register
+from smartconfig._registry import registry
 from smartconfig.typehints import _EntryMapping
 
 
@@ -69,16 +69,16 @@ class ConfigEntry(metaclass=_ConfigEntryMeta):
     def _register_entry(cls) -> None:
         """Set the `_path` attribute and register the entry."""
         cls._path = cls._path_override or cls.__module__.__name__
-        if cls._path in _register.configuration_for_module:
+        if cls._path in registry.configuration_for_module:
             raise DuplicateConfiguration(f"An entry at {cls._path} already exists.")  # TODO: Add an FAQ link.
 
-        _register.configuration_for_module[cls._path] = cls
+        registry.configuration_for_module[cls._path] = cls
 
     @classmethod
     def _fetch_configuration(cls) -> None:
         """Load the configuration from the register and apply it."""
-        if cls._path in _register.global_configuration:
-            cls._patch_entries(_register.global_configuration[cls._path])
+        if cls._path in registry.global_configuration:
+            cls._patch_entries(registry.global_configuration[cls._path])
 
     @classmethod
     def _check_undefined_entries(cls) -> None:
