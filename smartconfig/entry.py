@@ -3,41 +3,8 @@ from itertools import chain
 from typing import Any, Dict, List, Optional, Tuple
 
 from smartconfig.exceptions import ConfigurationKeyError, DuplicateConfiguration, InvalidOperation
-from smartconfig.parser import YamlLikeParser
 from smartconfig.register import _register
-from smartconfig.typehints import _EntryMapping, _FilePath
-
-
-def load_config_file(path: _FilePath) -> None:
-    """
-    Load a YAML-like configuration file and update configuration entries.
-
-    The values set in the YAML-like file will override values already defined in the `ConfigEntry`.
-    For each section, the name of previous sections will be concatenated in order to make the full path of the entry
-    to override.
-
-    See `smartconfig.YamlLikeParser` for more details on the syntax.
-
-    Args:
-        path: The path to the configuration file. Can be a string or an object defining `os.PathLike`.
-
-    Raises:
-        MalformedYamlFile: The configuration file is malformed.
-        FileNotFoundError: The configuration file doesn't exist.
-        IOError: An error occurred when reading the file.
-    """
-    with open(path) as file:
-        patch = YamlLikeParser(file.read(), file.name).parse()
-
-    for path, entries in patch.items():
-        # Patch every already existing entries.
-        if path in _register.configuration_for_module:
-            _register.configuration_for_module[path]._patch_entries(entries)
-
-        # Update the global register for future entries to use.
-        if path not in _register.global_configuration:
-            _register.global_configuration[path] = {}
-        _register.global_configuration[path].update(entries)
+from smartconfig.typehints import _EntryMapping
 
 
 class _ConfigEntryMeta(type):
