@@ -72,11 +72,7 @@ def load_config_file(path: _FilePath) -> None:
         restructured_yaml = _restructure_yaml(yaml_content, rootnode_name)
 
         for path, patch in restructured_yaml.items():
-            # Patch every existing entries.
-            if path in registry.configuration_for_module:
-                registry.configuration_for_module[path]._patch_entries(patch)
-
-            # Update the global register for future entries to use.
+            # Update the global registry.
             if path not in registry.global_configuration:
                 registry.global_configuration[path] = {}
             registry.global_configuration[path].update(patch)
