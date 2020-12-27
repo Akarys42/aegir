@@ -47,7 +47,7 @@ class _ConfigEntryMeta(type):
     Note: Using this metaclass outside of the library is currently not supported.
     """
 
-    def __getattribute__(cls, item: str):
+    def __getattribute__(cls, item: str) -> Optional[Any]:
         """
         Special attribute lookup function.
 
@@ -116,7 +116,7 @@ class ConfigEntry(metaclass=_ConfigEntryMeta):
     _defined_entries: List[str]
 
     @classmethod
-    def _register_entry(cls):
+    def _register_entry(cls) -> None:
         """Set the `_path` attribute and register the entry."""
         cls._path = cls._path_override or inspect.getmodule(cls).__name__
         if cls._path in _register.configuration_for_module:
@@ -125,20 +125,20 @@ class ConfigEntry(metaclass=_ConfigEntryMeta):
         _register.configuration_for_module[cls._path] = cls
 
     @classmethod
-    def _fetch_configuration(cls):
+    def _fetch_configuration(cls) -> None:
         """Load the configuration from the register and apply it."""
         if cls._path in _register.global_configuration:
             cls._patch_entries(_register.global_configuration[cls._path])
 
     @classmethod
-    def _check_undefined_entries(cls):
+    def _check_undefined_entries(cls) -> None:
         """Raise `ConfigurationKeyError` if any attribute doesn't have a concrete value."""
         for attribute in cls._defined_entries:
             if attribute not in cls._configuration_mapping:
                 raise ConfigurationKeyError(f"Entry {attribute} isn't defined.")
 
     @classmethod
-    def _patch_entries(cls, patch: _EntryMapping):
+    def _patch_entries(cls, patch: _EntryMapping) -> None:
         """
         Override attributes using the given patch.
 
@@ -154,7 +154,7 @@ class ConfigEntry(metaclass=_ConfigEntryMeta):
 
             cls._configuration_mapping[key] = value
 
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls, **kwargs) -> None:
         """
         Initialize the new entry.
 
@@ -168,6 +168,6 @@ class ConfigEntry(metaclass=_ConfigEntryMeta):
         cls._fetch_configuration()
         cls._check_undefined_entries()
 
-    def __init__(self):
+    def __init__(self) -> NoReturn:
         """Raises `InvalidOperation` as creating instances isn't allowed."""
         raise InvalidOperation("Creating instances of ConfigEntry isn't allowed.")

@@ -13,7 +13,7 @@ class _Register:
         configuration_for_module: A mapping of dotted paths to the corresponding entry.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.global_configuration: _EntryMappingRegister = {}
         self.configuration_for_module: Dict[str, smartconfig.ConfigEntry] = {}
 
