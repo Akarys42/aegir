@@ -1,8 +1,8 @@
 from itertools import chain
 from typing import Any, Dict, List, NoReturn, Optional, Tuple
 
-from smartconfig.exceptions import ConfigurationKeyError, DuplicateConfiguration, InvalidOperation
 from smartconfig._registry import registry
+from smartconfig.exceptions import ConfigurationKeyError, DuplicateConfiguration, InvalidOperation
 from smartconfig.typehints import _EntryMapping
 
 
@@ -34,12 +34,19 @@ class _ConfigEntryMeta(type):
 
         return cls._configuration_mapping[item]
 
-    def __new__(cls, name: str, bases: Tuple[type, ...], dict_: Dict[str, Any]) -> type:
-        """Add special attribute to the new entry."""
+    def __new__(cls, name: str, bases: Tuple[type, ...], dict_: Dict[str, Any], path: Optional[str] = None) -> type:
+        """
+        Add special attribute to the new entry.
+
+        Args:
+            path: Custom path used for this entry instead of the module name.
+        """
         dict_["_configuration_mapping"] = {key: value for key, value in dict_.items() if not key.startswith('_')}
 
         names = chain(dict_.keys(), dict_.get('__annotations__', {}).keys())
         dict_["_defined_entries"] = {name for name in names if not name.startswith('_')}
+
+        dict_["_path_override"] = path
 
         return super().__new__(cls, name, bases, dict_)
 
@@ -52,23 +59,18 @@ class ConfigEntry(metaclass=_ConfigEntryMeta):
     The entry will use its default values and potentially directly override them with already loaded configurations,
     and will also be overwritten in the future by newly loaded configurations.
 
-    The default path used by an entry is the name of the module it is defined in.
-
-    Attributes:
-        _path_override:
-            Can be used to override the default `_path` setting.
+    The default path used by an entry is the name of the module it is defined in, or the `path` metaclass argument.
     """
 
-    _path_override: Optional[str] = None
-
     _path: str
+    _path_override: Optional[str]
     _configuration_mapping: _EntryMapping
     _defined_entries: List[str]
 
     @classmethod
     def _register_entry(cls) -> None:
         """Set the `_path` attribute and register the entry."""
-        cls._path = cls._path_override or cls.__module__.__name__
+        cls._path = cls._path_override or cls.__module__
         if cls._path in registry.configuration_for_module:
             raise DuplicateConfiguration(f"An entry at {cls._path} already exists.")  # TODO: Add an FAQ link.
 
