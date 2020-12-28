@@ -47,6 +47,16 @@ class _ConfigEntryMeta(type):
 
         return super().__new__(cls, name, bases, dict_)
 
+    def __repr__(cls) -> str:
+        """Return a short representation of the entry."""
+        return f"<{cls.__name__} entry at {cls._path}>"
+
+    def __eq__(cls, other: Any) -> bool:
+        """Return true if this entry and the other point to the same path."""
+        if not isinstance(other, _ConfigEntryMeta):
+            return NotImplemented
+        return cls._path == other._path
+
 
 class ConfigEntry(metaclass=_ConfigEntryMeta):
     """
