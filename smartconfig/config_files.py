@@ -63,7 +63,7 @@ def load_config_file(path: _FilePath) -> None:
         IOError: An error occurred when reading the file.
     """
     with open(path) as file:
-        yaml_content = yaml.load(file, Loader=yaml.FullLoader)
+        yaml_content = yaml.full_load(file)
 
     for rootnode_name, rootnode_content in yaml_content.items():
         if not isinstance(rootnode_content, dict):
