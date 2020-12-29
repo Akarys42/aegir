@@ -10,6 +10,8 @@ class _ConfigEntryMeta(type):
     Metaclass used to define special ConfigEntry behaviors.
 
     Note: Using this metaclass outside of the library is currently not supported.
+
+    The lookup of attributes can be customized by subclassing this metaclass and changing `_get_attribute_path`.
     """
 
     __path: str
@@ -32,10 +34,12 @@ class _ConfigEntryMeta(type):
         if item.startswith('_'):
             return super().__getattribute__(item)
 
-        if item not in registry.global_configuration[cls.__path]:
-            raise ConfigurationKeyError(f"Entry {cls.__path} doesn't define any {item} entry.")
+        path, attribute = cls._get_attribute_path(item)
 
-        return registry.global_configuration[cls.__path][item]
+        if attribute not in registry.global_configuration[path]:
+            raise ConfigurationKeyError(f"Entry {path} doesn't define any {attribute} entry.")
+
+        return registry.global_configuration[path][attribute]
 
     def __new__(cls, name: str, bases: Tuple[type, ...], dict_: Dict[str, Any], path: Optional[str] = None) -> type:
         """
@@ -77,6 +81,20 @@ class _ConfigEntryMeta(type):
         for attribute in cls.__defined_entries:
             if attribute not in registry.global_configuration[cls.__path]:
                 raise ConfigurationKeyError(f"Entry {attribute} isn't defined.")
+
+    def _get_attribute_path(cls, attribute_name: str) -> Tuple[str, str]:
+        """
+        Returns which path to use to lookup the attribute.
+
+        By default `(cls.__path, attribute_name)` will be returned.
+
+        Args:
+            attribute_name: The name of the attribute to lookup.
+
+        Returns:
+            A tuple with the configuration path as the first element and the element name to lookup.
+        """
+        return cls.__path, attribute_name
 
     def __init__(cls, name: str, bases: Tuple[type, ...], dict_: Dict[str, Any], path: Optional[str] = None):
         """
