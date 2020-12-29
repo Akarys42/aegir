@@ -3,6 +3,7 @@ from typing import List
 import yaml
 
 from smartconfig._registry import registry
+from smartconfig.constructors import _ref_constructor
 from smartconfig.typehints import _EntryMappingRegister, _FilePath
 
 
@@ -76,3 +77,6 @@ def load_config_file(path: _FilePath) -> None:
             if path not in registry.global_configuration:
                 registry.global_configuration[path] = {}
             registry.global_configuration[path].update(patch)
+
+
+yaml.FullLoader.add_constructor("!REF", _ref_constructor)

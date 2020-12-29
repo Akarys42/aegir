@@ -36,6 +36,9 @@ class _ConfigEntryMeta(type):
 
         path, attribute = cls._get_attribute_path(item)
 
+        if path not in registry.global_configuration:
+            raise ConfigurationKeyError(f"Configuration path {path} isn't defined.")
+
         if attribute not in registry.global_configuration[path]:
             raise ConfigurationKeyError(f"Entry {path} doesn't define any {attribute} entry.")
 
