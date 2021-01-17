@@ -1,5 +1,5 @@
 from itertools import chain
-from typing import Any, Dict, List, NoReturn, Optional, Tuple
+from typing import Any, Dict, NoReturn, Optional, Tuple
 
 from smartconfig._registry import registry
 from smartconfig.exceptions import ConfigurationKeyError, DuplicateConfiguration, InvalidOperation
@@ -13,10 +13,6 @@ class _ConfigEntryMeta(type):
 
     The lookup of attributes can be customized by subclassing this metaclass and changing `_get_attribute_path`.
     """
-
-    __path: str
-    __path_override: Optional[str]
-    __defined_entries: List[str]
 
     def __getattribute__(cls, item: str) -> Optional[Any]:
         """
