@@ -2,7 +2,7 @@ from itertools import chain
 from typing import Any, Dict, NoReturn, Optional, Tuple
 
 from smartconfig._registry import registry
-from smartconfig.exceptions import ConfigurationKeyError, DuplicateConfiguration, InvalidOperation
+from smartconfig.exceptions import ConfigurationKeyError, InvalidOperation, PathConflict
 
 
 class _ConfigEntryMeta(type):
@@ -55,7 +55,7 @@ class _ConfigEntryMeta(type):
         """Set the `__path` attribute and register the entry."""
         cls.__path = cls.__path_override or cls.__module__
         if cls.__path in registry.configuration_for_module:
-            raise DuplicateConfiguration(f"An entry at {cls.__path!r} already exists.")  # TODO: Add an FAQ link.
+            raise PathConflict(f"An entry at {cls.__path!r} already exists.")  # TODO: Add an FAQ link.
 
         configuration = {
             key: value for key, value in cls.__dict__.items() if not key.startswith('_')
@@ -97,7 +97,7 @@ class _ConfigEntryMeta(type):
         Initialize the new entry.
 
         Raises:
-            DuplicateConfiguration: An entry is already registered for this path, use the `path` metaclass argument.
+            PathConflict: An entry is already registered for this path, use the `path` metaclass argument.
             ConfigurationKeyError: An attribute doesn't have a concrete value.
         """
         super().__init__(name, bases, dict_)

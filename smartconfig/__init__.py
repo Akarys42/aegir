@@ -4,8 +4,8 @@ from smartconfig.config_files import load
 from smartconfig.entry import ConfigEntry
 from smartconfig.exceptions import (
     ConfigurationKeyError,
-    DuplicateConfiguration,
     InvalidOperation,
+    PathConflict,
     SmartconfigException
 )
 from smartconfig.typehints import EntryType
@@ -17,7 +17,7 @@ __all__ = (
     "ConfigEntry", "load",
 
     # Exceptions
-    "SmartconfigException", "DuplicateConfiguration", "ConfigurationKeyError", "InvalidOperation",
+    "SmartconfigException", "ConfigurationKeyError", "PathConflict", "InvalidOperation",
 
     # Typehinting
     "EntryType",

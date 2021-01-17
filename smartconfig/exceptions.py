@@ -3,7 +3,7 @@ class SmartconfigException(Exception):
     pass
 
 
-class DuplicateConfiguration(ValueError, SmartconfigException):
+class PathConflict(ValueError, SmartconfigException):
     """
     Two configuration entries point to the same path.
 
