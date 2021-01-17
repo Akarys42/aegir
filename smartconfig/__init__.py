@@ -1,6 +1,6 @@
 """A minimal package to support configuration files without any additional work."""
 
-from smartconfig.config_files import load_config_file
+from smartconfig.config_files import load
 from smartconfig.entry import ConfigEntry
 from smartconfig.exceptions import (
     ConfigurationKeyError,
@@ -15,7 +15,7 @@ __version__ = "0.0.0-dev1"
 
 __all__ = (
     # Main API
-    "ConfigEntry", "load_config_file",
+    "ConfigEntry", "load",
 
     # Exceptions
     "SmartconfigException", "DuplicateConfiguration", "ConfigurationKeyError", "InvalidOperation",

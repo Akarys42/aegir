@@ -47,7 +47,7 @@ def _restructure_yaml(
     return result
 
 
-def load_config_file(path: _FilePath) -> None:
+def load(path: _FilePath) -> None:
     """
     Load a YAML configuration file and update configuration entries.
 
