@@ -20,7 +20,7 @@ def _restructure_yaml(
         result: The output constructed so far.
 
     Returns:
-         `result` will all the subnodes of `node_name` converted to a dotted path.
+         `result` with all the child nodes of `node_name` converted to a dotted path.
     """
     if not node_path:
         node_path = []
