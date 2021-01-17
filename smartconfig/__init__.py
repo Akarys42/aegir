@@ -1,6 +1,5 @@
 """A minimal package to support configuration files without any additional work."""
 
-from smartconfig.config_files import load
 from smartconfig.entry import ConfigEntry
 from smartconfig.exceptions import (
     ConfigurationKeyError,
@@ -8,6 +7,7 @@ from smartconfig.exceptions import (
     PathConflict,
     SmartconfigException
 )
+from smartconfig.file import load
 from smartconfig.typehints import EntryType
 
 __version__ = "0.0.0-dev1"
