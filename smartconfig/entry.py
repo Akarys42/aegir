@@ -14,23 +14,23 @@ class _ConfigEntryMeta(type):
     The lookup of attributes can be customized by subclassing this metaclass and changing `_get_attribute_path`.
     """
 
-    def __getattribute__(cls, item: str) -> Optional[Any]:
+    def __getattribute__(cls, name: str) -> Optional[Any]:
         """
         Special attribute lookup function.
 
         If the attribute name starts with `_`, normal lookup is done, otherwise registry.global_configuration is used.
 
         Args:
-            item: Attribute to lookup
+            name: Attribute to lookup
 
         Raises:
             ConfigurationKeyError: The item doesn't exist.
         """
         # Use the normal lookup for attribute starting with `_`
-        if item.startswith('_'):
-            return super().__getattribute__(item)
+        if name.startswith('_'):
+            return super().__getattribute__(name)
 
-        path, attribute = cls._get_attribute_path(item)
+        path, attribute = cls._get_attribute_path(name)
 
         if attribute not in registry.global_configuration[path]:
             raise ConfigurationKeyError(f"Entry {cls.__name__!r} at {path!r} has no attribute {attribute!r}.")
