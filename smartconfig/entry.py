@@ -32,7 +32,7 @@ class _ConfigEntryMeta(type):
 
         path, attribute = cls._get_attribute_path(name)
 
-        if attribute not in registry.global_configuration[path]:
+        if path not in registry.global_configuration or attribute not in registry.global_configuration[path]:
             # We try to look it up from the class
             try:
                 return super().__getattribute__(name)
@@ -68,7 +68,7 @@ class _ConfigEntryMeta(type):
     def _check_undefined_entries(cls) -> None:
         """Raise `ConfigurationKeyError` if any attribute doesn't have a concrete value."""
         for attribute in cls.__defined_entries:
-            if attribute not in registry.global_configuration[cls.__path] and not hasattr(cls, attribute):
+            if not hasattr(cls, attribute) and attribute not in registry.global_configuration[cls.__path]:
                 raise ConfigurationKeyError(f"Attribute {attribute!r} isn't defined.")
 
     def _get_attribute_path(cls, attribute_name: str) -> Tuple[str, str]:
@@ -101,9 +101,9 @@ class _ConfigEntryMeta(type):
     def __repr__(cls) -> str:
         """Return a short representation of the entry."""
         if hasattr(cls, '__path'):
-            return f"<Entry {cls.__name__} at {cls.__path!r}>"
+            return f"<_ConfigEntryMeta {cls.__name__} at {cls.__path!r}>"
         else:
-            return f"<Entry {cls.__name__}>"
+            return f"<_ConfigEntryMeta {cls.__name__}>"
 
     def __eq__(cls, other: Any) -> bool:
         """Return true if this entry and the other point to the same path."""
