@@ -97,7 +97,7 @@ class _ConfigEntryMeta(type):
         Initialize the new entry.
 
         Raises:
-            DuplicateConfiguration: An entry is already registered for this path, use `__path_override`.
+            DuplicateConfiguration: An entry is already registered for this path, use the `path` metaclass argument.
             ConfigurationKeyError: An attribute doesn't have a concrete value.
         """
         super().__init__(name, bases, dict_)

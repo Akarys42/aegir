@@ -17,7 +17,7 @@ __all__ = (
     "ConfigEntry", "load",
 
     # Exceptions
-    "SmartconfigException", "DuplicateConfiguration", "ConfigurationKeyError", "InvalidOperation"
+    "SmartconfigException", "DuplicateConfiguration", "ConfigurationKeyError", "InvalidOperation",
 
     # Typehinting
     "EntryType",

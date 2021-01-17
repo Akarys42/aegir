@@ -4,7 +4,11 @@ class SmartconfigException(Exception):
 
 
 class DuplicateConfiguration(ValueError, SmartconfigException):
-    """Two configuration entries point to the same path. Use `_path_override` to bypass this restriction."""
+    """
+    Two configuration entries point to the same path.
+
+    Provide a `path` argument to the metaclass to bypass this restriction.
+    """
     pass
 
 
