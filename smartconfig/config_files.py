@@ -7,8 +7,7 @@ from smartconfig.typehints import _EntryMappingRegister, _FilePath
 
 
 def _restructure_yaml(
-        yaml_content: ...,
-        node_name: str,
+        node: ...,
         node_path: List[str] = None,
         result: _EntryMappingRegister = None
 ) -> _EntryMappingRegister:
@@ -16,9 +15,8 @@ def _restructure_yaml(
     Recursively fold the dictionary structure given by the YAML parser into a dotted path.
 
     Args:
-        yaml_content: The YAML dictionary structure containing the node to process.
-        node_name: The name of the node to process.
-        node_path: List of all the nodes needed to access this particular node.
+        node: The YAML dictionary structure of the node to process.
+        node_path: List of all the nodes needed to access this particular node, including the node itself.
         result: The output constructed so far.
 
     Returns:
@@ -29,20 +27,19 @@ def _restructure_yaml(
     if not result:
         result = {}
 
-    for subnode_name, subnode_value in yaml_content[node_name].items():
-        if isinstance(yaml_content[node_name][subnode_name], dict):
+    for child_node_name, child_node_value in node.items():
+        if isinstance(node[child_node_name], dict):
             result = _restructure_yaml(
-                yaml_content[node_name],
-                subnode_name,
-                node_path + [node_name],
+                child_node_value,
+                node_path + [child_node_name],
                 result
             )
         else:
-            path = '.'.join(node_path + [node_name])
+            path = '.'.join(node_path)
 
             if path not in result:
                 result[path] = {}
-            result[path][subnode_name] = subnode_value
+            result[path][child_node_name] = child_node_value
 
     return result
 
@@ -65,11 +62,11 @@ def load(path: _FilePath) -> None:
     with open(path) as file:
         yaml_content = yaml.full_load(file)
 
-    for rootnode_name, rootnode_content in yaml_content.items():
-        if not isinstance(rootnode_content, dict):
+    for root_node_name, root_node_value in yaml_content.items():
+        if not isinstance(root_node_value, dict):
             raise ...
 
-        restructured_yaml = _restructure_yaml(yaml_content, rootnode_name)
+        restructured_yaml = _restructure_yaml(root_node_value, [root_node_name])
 
         for path, patch in restructured_yaml.items():
             # Update the global registry.
