@@ -2,7 +2,7 @@ from typing import List
 
 import yaml
 
-from smartconfig._registry import registry
+from smartconfig import _registry
 from smartconfig.typehints import _EntryMappingRegistry, _FilePath
 
 
@@ -70,6 +70,6 @@ def load(path: _FilePath) -> None:
 
         for path, patch in restructured_yaml.items():
             # Update the global registry.
-            if path not in registry.global_configuration:
-                registry.global_configuration[path] = {}
-            registry.global_configuration[path].update(patch)
+            if path not in _registry.global_configuration:
+                _registry.global_configuration[path] = {}
+            _registry.global_configuration[path].update(patch)

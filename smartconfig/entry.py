@@ -1,7 +1,7 @@
 from itertools import chain
 from typing import Any, Dict, NoReturn, Optional, Tuple
 
-from smartconfig._registry import registry
+from smartconfig import _registry
 from smartconfig.exceptions import ConfigurationKeyError, InvalidOperation, PathConflict
 
 
@@ -32,7 +32,7 @@ class _ConfigEntryMeta(type):
 
         path, attribute = cls._get_attribute_path(name)
 
-        if path not in registry.global_configuration or attribute not in registry.global_configuration[path]:
+        if path not in _registry.global_configuration or attribute not in _registry.global_configuration[path]:
             # We try to look it up from the class
             try:
                 return super().__getattribute__(name)
@@ -41,7 +41,7 @@ class _ConfigEntryMeta(type):
                     f"Entry {cls.__name__!r} at {path!r} has no attribute {attribute!r}."
                 ) from None
 
-        return registry.global_configuration[path][attribute]
+        return _registry.global_configuration[path][attribute]
 
     def __new__(cls, name: str, bases: Tuple[type, ...], dict_: Dict[str, Any], path: Optional[str] = None) -> type:
         """
@@ -60,15 +60,15 @@ class _ConfigEntryMeta(type):
     def _register_entry(cls) -> None:
         """Set the `__path` attribute and register the entry."""
         cls.__path = cls.__path_override or cls.__module__
-        if cls.__path in registry.configuration_for_module:
+        if cls.__path in _registry.configuration_for_module:
             raise PathConflict(f"An entry at {cls.__path!r} already exists.")  # TODO: Add an FAQ link.
 
-        registry.configuration_for_module[cls.__path] = cls
+        _registry.configuration_for_module[cls.__path] = cls
 
     def _check_undefined_entries(cls) -> None:
         """Raise `ConfigurationKeyError` if any attribute doesn't have a concrete value."""
         for attribute in cls.__defined_entries:
-            if not hasattr(cls, attribute) and attribute not in registry.global_configuration[cls.__path]:
+            if not hasattr(cls, attribute) and attribute not in _registry.global_configuration[cls.__path]:
                 raise ConfigurationKeyError(f"Attribute {attribute!r} isn't defined.")
 
     def _get_attribute_path(cls, attribute_name: str) -> Tuple[str, str]:
