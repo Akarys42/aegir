@@ -76,7 +76,7 @@ class _ConfigEntryMeta(type):
         """Raise `ConfigurationKeyError` if any attribute doesn't have a concrete value."""
         for attribute in cls.__defined_entries:
             if attribute not in registry.global_configuration[cls.__path]:
-                raise ConfigurationKeyError(f"Entry {attribute!r} isn't defined.")
+                raise ConfigurationKeyError(f"Attribute {attribute!r} isn't defined.")
 
     def _get_attribute_path(cls, attribute_name: str) -> Tuple[str, str]:
         """
