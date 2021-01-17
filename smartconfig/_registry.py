@@ -1,7 +1,7 @@
 from typing import Dict
 
 import smartconfig
-from smartconfig.typehints import _EntryMappingRegister
+from smartconfig.typehints import _EntryMappingRegistry
 
 
 class Registry:
@@ -14,7 +14,7 @@ class Registry:
     """
 
     def __init__(self) -> None:
-        self.global_configuration: _EntryMappingRegister = {}
+        self.global_configuration: _EntryMappingRegistry = {}
         self.configuration_for_module: Dict[str, smartconfig.ConfigEntry] = {}
 
 

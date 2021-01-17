@@ -3,14 +3,14 @@ from typing import List
 import yaml
 
 from smartconfig._registry import registry
-from smartconfig.typehints import _EntryMappingRegister, _FilePath
+from smartconfig.typehints import _EntryMappingRegistry, _FilePath
 
 
 def _restructure_yaml(
         node: ...,
         node_path: List[str] = None,
-        result: _EntryMappingRegister = None
-) -> _EntryMappingRegister:
+        result: _EntryMappingRegistry = None
+) -> _EntryMappingRegistry:
     """
     Recursively fold the dictionary structure given by the YAML parser into a dotted path.
 
