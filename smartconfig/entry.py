@@ -16,7 +16,7 @@ class _ConfigEntryMeta(type):
 
     def __getattribute__(cls, name: str) -> Optional[Any]:
         """
-        Special attribute lookup function.
+        Lookup the attribute through the configuration system.
 
         If the attribute name starts with `_`, normal lookup is done, otherwise registry.global_configuration is used.
 
@@ -39,7 +39,7 @@ class _ConfigEntryMeta(type):
 
     def __new__(cls, name: str, bases: Tuple[type, ...], dict_: Dict[str, Any], path: Optional[str] = None) -> type:
         """
-        Add special attribute to the new entry.
+        Add the `__defined_entries` and `__path_override` attributes to the new entry.
 
         Args:
             path: Custom path used for this entry instead of the module name.
