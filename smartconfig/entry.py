@@ -33,7 +33,13 @@ class _ConfigEntryMeta(type):
         path, attribute = cls._get_attribute_path(name)
 
         if attribute not in registry.global_configuration[path]:
-            raise ConfigurationKeyError(f"Entry {cls.__name__!r} at {path!r} has no attribute {attribute!r}.")
+            # We try to look it up from the class
+            try:
+                return super().__getattribute__(name)
+            except AttributeError:
+                raise ConfigurationKeyError(
+                    f"Entry {cls.__name__!r} at {path!r} has no attribute {attribute!r}."
+                ) from None
 
         return registry.global_configuration[path][attribute]
 
@@ -57,25 +63,12 @@ class _ConfigEntryMeta(type):
         if cls.__path in registry.configuration_for_module:
             raise PathConflict(f"An entry at {cls.__path!r} already exists.")  # TODO: Add an FAQ link.
 
-        configuration = {
-            key: value for key, value in cls.__dict__.items() if not key.startswith('_')
-        }
-
-        if cls.__path not in registry.global_configuration:
-            registry.global_configuration[cls.__path] = configuration
-        # We already have some overrides for this path.
-        else:
-            for key, value in configuration.items():
-                # We only write values that aren't already defined.
-                if key not in registry.global_configuration[cls.__path]:
-                    registry.global_configuration[cls.__path][key] = value
-
         registry.configuration_for_module[cls.__path] = cls
 
     def _check_undefined_entries(cls) -> None:
         """Raise `ConfigurationKeyError` if any attribute doesn't have a concrete value."""
         for attribute in cls.__defined_entries:
-            if attribute not in registry.global_configuration[cls.__path]:
+            if attribute not in registry.global_configuration[cls.__path] and not hasattr(cls, attribute):
                 raise ConfigurationKeyError(f"Attribute {attribute!r} isn't defined.")
 
     def _get_attribute_path(cls, attribute_name: str) -> Tuple[str, str]:
