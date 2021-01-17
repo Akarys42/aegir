@@ -37,7 +37,7 @@ class _ConfigEntryMeta(type):
         path, attribute = cls._get_attribute_path(item)
 
         if attribute not in registry.global_configuration[path]:
-            raise ConfigurationKeyError(f"Entry {path} doesn't define any {attribute} entry.")
+            raise ConfigurationKeyError(f"Entry {cls.__name__!r} at {path!r} has no attribute {attribute!r}.")
 
         return registry.global_configuration[path][attribute]
 
@@ -59,7 +59,7 @@ class _ConfigEntryMeta(type):
         """Set the `__path` attribute and register the entry."""
         cls.__path = cls.__path_override or cls.__module__
         if cls.__path in registry.configuration_for_module:
-            raise DuplicateConfiguration(f"An entry at {cls.__path} already exists.")  # TODO: Add an FAQ link.
+            raise DuplicateConfiguration(f"An entry at {cls.__path!r} already exists.")  # TODO: Add an FAQ link.
 
         configuration = {
             key: value for key, value in cls.__dict__.items() if not key.startswith('_')
@@ -80,7 +80,7 @@ class _ConfigEntryMeta(type):
         """Raise `ConfigurationKeyError` if any attribute doesn't have a concrete value."""
         for attribute in cls.__defined_entries:
             if attribute not in registry.global_configuration[cls.__path]:
-                raise ConfigurationKeyError(f"Entry {attribute} isn't defined.")
+                raise ConfigurationKeyError(f"Entry {attribute!r} isn't defined.")
 
     def _get_attribute_path(cls, attribute_name: str) -> Tuple[str, str]:
         """
@@ -112,7 +112,7 @@ class _ConfigEntryMeta(type):
     def __repr__(cls) -> str:
         """Return a short representation of the entry."""
         if hasattr(cls, '__path'):
-            return f"<Entry {cls.__name__} at {cls.__path}>"
+            return f"<Entry {cls.__name__} at {cls.__path!r}>"
         else:
             return f"<Entry {cls.__name__}>"
 
