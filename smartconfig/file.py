@@ -29,7 +29,7 @@ def _restructure_yaml(
         result = {}
 
     for child_node_name, child_node_value in node.items():
-        if isinstance(node[child_node_name], dict):
+        if isinstance(child_node_value, dict):
             result = _restructure_yaml(
                 child_node_value,
                 node_path + [child_node_name],
