@@ -66,10 +66,14 @@ class _ConfigEntryMeta(type):
         _registry.configuration_for_module[cls.__path] = cls
 
     def _check_undefined_entries(cls) -> None:
-        """Raise `ConfigurationKeyError` if any attribute doesn't have a concrete value."""
+        """Raise `ConfigurationKeyError` if any attribute doesn't have a defined value."""
         for attribute in cls.__defined_attributes:
-            if not hasattr(cls, attribute) and attribute not in _registry.global_configuration[cls.__path]:
-                raise ConfigurationKeyError(f"Attribute {attribute!r} isn't defined.")
+            try:
+                if hasattr(cls, attribute):
+                    continue
+            except ConfigurationKeyError:
+                if attribute not in _registry.global_configuration[cls.__path]:
+                    raise ConfigurationKeyError(f"Attribute {attribute!r} isn't defined.") from None
 
     def _get_attribute_path(cls, attribute_name: str) -> Tuple[str, str]:
         """
@@ -91,7 +95,7 @@ class _ConfigEntryMeta(type):
 
         Raises:
             PathConflict: An entry is already registered for this path, use the `path` metaclass argument.
-            ConfigurationKeyError: An attribute doesn't have a concrete value.
+            ConfigurationKeyError: An attribute doesn't have a defined value.
         """
         super().__init__(name, bases, dict_)
 
