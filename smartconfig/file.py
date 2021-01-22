@@ -2,7 +2,7 @@ from typing import List
 
 import yaml
 
-from smartconfig import _registry
+from smartconfig import _registry, ConfigurationError
 from smartconfig.constructors import _ref_constructor
 from smartconfig.typehints import _EntryMappingRegistry, _FilePath
 
@@ -65,7 +65,7 @@ def load(path: _FilePath) -> None:
 
     for root_node_name, root_node_value in yaml_content.items():
         if not isinstance(root_node_value, dict):
-            raise ...
+            raise ConfigurationError(f"Cannot set the attribute {root_node_name} on the root node.")
 
         restructured_yaml = _restructure_yaml(root_node_value, [root_node_name])
 

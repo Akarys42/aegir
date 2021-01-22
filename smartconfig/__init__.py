@@ -2,6 +2,7 @@
 
 from smartconfig.entry import ConfigEntry
 from smartconfig.exceptions import (
+    ConfigurationError,
     ConfigurationKeyError,
     InvalidOperation,
     PathConflict,
@@ -17,7 +18,7 @@ __all__ = (
     "ConfigEntry", "load",
 
     # Exceptions
-    "SmartconfigException", "ConfigurationKeyError", "PathConflict", "InvalidOperation",
+    "SmartconfigException", "ConfigurationKeyError", "PathConflict", "InvalidOperation", "ConfigurationError",
 
     # Typehinting
     "EntryType",

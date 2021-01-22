@@ -20,3 +20,8 @@ class ConfigurationKeyError(KeyError, SmartconfigException):
 class InvalidOperation(RuntimeError, SmartconfigException):
     """An invalid operation has been performed."""
     pass
+
+
+class ConfigurationError(ValueError, SmartconfigException):
+    """The provided configuration is invalid."""
+    pass
