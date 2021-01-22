@@ -2,13 +2,13 @@ from typing import List
 
 import yaml
 
-from smartconfig import _registry, ConfigurationError
+from smartconfig import ConfigurationError, _registry
 from smartconfig.constructors import _ref_constructor
-from smartconfig.typehints import _EntryMappingRegistry, _FilePath
+from smartconfig.typehints import YAMLStructure, _EntryMappingRegistry, _FilePath
 
 
 def _restructure_yaml(
-        node: ...,
+        node: YAMLStructure,
         node_path: List[str] = None,
         result: _EntryMappingRegistry = None
 ) -> _EntryMappingRegistry:
