@@ -30,9 +30,12 @@ def _restructure_yaml(
 
     for child_node_name, child_node_value in node.items():
         if isinstance(child_node_value, dict):
+            # We add them to make that we reset the node_path at each iteration.
+            child_node_path = node_path + [child_node_name]
+
             result = _restructure_yaml(
                 child_node_value,
-                node_path + [child_node_name],
+                child_node_path,
                 result
             )
         else:
