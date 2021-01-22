@@ -16,7 +16,7 @@ class _ConfigEntryMeta(type):
 
     def __getattribute__(cls, name: str) -> Optional[Any]:
         """
-        Lookup the attribute through the configuration system.
+        Look up the attribute through the configuration system.
 
         If the attribute name starts with `_`, normal lookup is done, otherwise registry.global_configuration is used.
 
