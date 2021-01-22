@@ -94,7 +94,7 @@ class _ConfigEntryMeta(type):
         Initialize the new entry.
 
         Raises:
-            PathConflict: An entry is already registered for this path, use the `path` metaclass argument.
+            PathConflict: An entry is already registered for this path. Use the `path` metaclass argument.
             ConfigurationKeyError: An attribute doesn't have a defined value.
         """
         super().__init__(name, bases, dict_)
