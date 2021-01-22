@@ -45,13 +45,13 @@ class _ConfigEntryMeta(type):
 
     def __new__(cls, name: str, bases: Tuple[type, ...], dict_: Dict[str, Any], path: Optional[str] = None) -> type:
         """
-        Add the `__defined_entries` and `__path_override` attributes to the new entry.
+        Add the `__defined_attributes` and `__path_override` attributes to the new entry.
 
         Args:
             path: Custom path used for this entry instead of the module name.
         """
         names = chain(dict_.keys(), dict_.get('__annotations__', {}).keys())
-        dict_[f"{cls.__name__}__defined_entries"] = {name for name in names if not name.startswith('_')}
+        dict_[f"{cls.__name__}__defined_attributes"] = {name for name in names if not name.startswith('_')}
 
         dict_[f"{cls.__name__}__path_override"] = path
 
@@ -67,7 +67,7 @@ class _ConfigEntryMeta(type):
 
     def _check_undefined_entries(cls) -> None:
         """Raise `ConfigurationKeyError` if any attribute doesn't have a concrete value."""
-        for attribute in cls.__defined_entries:
+        for attribute in cls.__defined_attributes:
             if not hasattr(cls, attribute) and attribute not in _registry.global_configuration[cls.__path]:
                 raise ConfigurationKeyError(f"Attribute {attribute!r} isn't defined.")
 
