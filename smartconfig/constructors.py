@@ -7,6 +7,13 @@ from smartconfig.exceptions import ConfigurationKeyError
 
 
 class AttributeReference:
+    """
+    A descriptor referencing another attribute.
+
+    Args:
+        path: A comma separated path to the attribute you want to reference.
+    """
+
     def __init__(self, path: str) -> None:
         self.path, self.attribute = path.rsplit('.', maxsplit=1)
 
