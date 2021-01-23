@@ -15,16 +15,23 @@ class AttributeReference:
     """
 
     def __init__(self, path: str) -> None:
-        self.path, self.attribute = path.rsplit('.', maxsplit=1)
+        if '.' in path:
+            self.path, self.attribute = path.rsplit('.', maxsplit=1)
+        else:
+            self.path = path
+            self.attribute = None
 
     def __get__(self, *_) -> Any:
         if self.path not in _registry.global_configuration:
             raise ConfigurationKeyError(f"Configuration path {self.path} isn't defined.")
 
-        if self.attribute not in _registry.global_configuration[self.path]:
-            raise ConfigurationKeyError(f"Entry {self.path} doesn't define any {self.attribute} entry.")
+        if self.attribute:
+            if self.attribute not in _registry.global_configuration[self.path]:
+                raise ConfigurationKeyError(f"Entry {self.path} doesn't define any {self.attribute} entry.")
 
-        return _registry.global_configuration[self.path][self.attribute]
+            return _registry.global_configuration[self.path][self.attribute]
+        else:
+            return _registry.global_configuration[self.path]
 
     def __set__(self, *_) -> None:
         return
