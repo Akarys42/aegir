@@ -68,7 +68,9 @@ def load(path: _FilePath) -> None:
 
     for root_node_name, root_node_value in yaml_content.items():
         if not isinstance(root_node_value, dict):
-            raise ConfigurationError(f"Cannot set the attribute {root_node_name} on the root node.")
+            # We directly set it, there's no folding to do
+            _registry.global_configuration[root_node_name] = root_node_value
+            continue
 
         restructured_yaml = _restructure_yaml(root_node_value, [root_node_name])
 

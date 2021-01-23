@@ -2,7 +2,7 @@ from itertools import chain
 from typing import Any, Dict, NoReturn, Optional, Tuple
 
 from smartconfig import _registry
-from smartconfig.exceptions import ConfigurationKeyError, InvalidOperation, PathConflict
+from smartconfig.exceptions import ConfigurationKeyError, InvalidOperation, PathConflict, ConfigurationError
 
 
 class _ConfigEntryMeta(type):
@@ -40,6 +40,9 @@ class _ConfigEntryMeta(type):
                 raise ConfigurationKeyError(
                     f"Entry {cls.__name__!r} at {path!r} has no attribute {attribute!r}."
                 ) from None
+
+        if not isinstance(_registry.global_configuration[path], dict):
+            raise ConfigurationError(f"YAML object at path {path} is a set attribute, not an attribute mapping.")
 
         return _registry.global_configuration[path][attribute]
 
