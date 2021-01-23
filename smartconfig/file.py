@@ -2,7 +2,7 @@ from typing import List
 
 import yaml
 
-from smartconfig import ConfigurationError, _registry
+from smartconfig import _registry
 from smartconfig.constructors import _ref_constructor
 from smartconfig.typehints import YAMLStructure, _EntryMappingRegistry, _FilePath
 

@@ -2,8 +2,7 @@ from typing import Any
 
 import yaml
 
-from smartconfig import _registry
-from smartconfig.exceptions import ConfigurationKeyError
+from smartconfig._registry import lookup_global_configuration
 
 
 class AttributeReference:
@@ -22,16 +21,7 @@ class AttributeReference:
             self.attribute = None
 
     def __get__(self, *_) -> Any:
-        if self.path not in _registry.global_configuration:
-            raise ConfigurationKeyError(f"Configuration path {self.path} isn't defined.")
-
-        if self.attribute:
-            if self.attribute not in _registry.global_configuration[self.path]:
-                raise ConfigurationKeyError(f"Entry {self.path} doesn't define any {self.attribute} entry.")
-
-            return _registry.global_configuration[self.path][self.attribute]
-        else:
-            return _registry.global_configuration[self.path]
+        return lookup_global_configuration(self.path, self.attribute)
 
     def __set__(self, *_) -> None:
         return
