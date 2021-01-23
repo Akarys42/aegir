@@ -12,7 +12,7 @@ class PathConflict(ValueError, SmartconfigException):
     pass
 
 
-class ConfigurationKeyError(KeyError, SmartconfigException):
+class ConfigurationKeyError(AttributeError, SmartconfigException):
     """An invalid key name has been used."""
     pass
 

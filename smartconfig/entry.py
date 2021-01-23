@@ -68,12 +68,8 @@ class _ConfigEntryMeta(type):
     def _check_undefined_entries(cls) -> None:
         """Raise `ConfigurationKeyError` if any attribute doesn't have a defined value."""
         for attribute in cls.__defined_attributes:
-            try:
-                if hasattr(cls, attribute):
-                    continue
-            except ConfigurationKeyError:
-                if attribute not in _registry.global_configuration[cls.__path]:
-                    raise ConfigurationKeyError(f"Attribute {attribute!r} isn't defined.") from None
+            if not hasattr(cls, attribute) and attribute not in _registry.global_configuration[cls.__path]:
+                raise ConfigurationKeyError(f"Attribute {attribute!r} isn't defined.") from None
 
     def _get_attribute_path(cls, attribute_name: str) -> Tuple[str, str]:
         """
