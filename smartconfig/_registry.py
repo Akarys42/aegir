@@ -9,11 +9,43 @@ Attributes:
 from typing import Dict, Optional
 
 import smartconfig
-from smartconfig.typehints import EntryType, _EntryMappingRegistry
+from smartconfig.typehints import EntryType, YAMLStructure, _EntryMapping
 from .exceptions import ConfigurationError, ConfigurationKeyError
 
-global_configuration: _EntryMappingRegistry = {}
+global_configuration: YAMLStructure = {}
 configuration_for_module: Dict[str, "smartconfig.ConfigEntry"] = {}
+
+mapping_cache: Dict[str, _EntryMapping] = {}
+
+
+def _lookup_mapping(path: str) -> _EntryMapping:
+    """
+    Lookup a mapping node.
+
+    Will try to use the mapping_cache when possible.
+
+    Args:
+         path: Dotted path of the mapping to lookup.
+
+    Returns:
+        The entry mapping at the requested path.
+
+    Raises:
+        ConfigurationKeyError: No override exists for this path.
+    """
+    if path in mapping_cache:
+        return mapping_cache[path]
+
+    current_node = global_configuration
+
+    for node_name in path.split('.'):
+        if node_name not in current_node:
+            raise ConfigurationKeyError(f"No override exists for the path {path!r}.")
+
+        current_node = current_node[node_name]
+
+    mapping_cache[path] = current_node
+    return current_node
 
 
 def lookup_global_configuration(path: str, attribute: Optional[str]) -> EntryType:
@@ -30,13 +62,12 @@ def lookup_global_configuration(path: str, attribute: Optional[str]) -> EntryTyp
     Raises:
         ConfigurationKeyError: The path or the attribute doesn't exist, or the YAML object isn't an attribute mapping.
     """
-    if path not in global_configuration:
-        raise ConfigurationKeyError(f"No override exists for the path {path}.")
+    node = _lookup_mapping(path)
 
     if not attribute:
-        entry = global_configuration[path]
+        entry = node
     else:
-        mapping = global_configuration[path]
+        mapping = node
 
         if not isinstance(mapping, dict):
             raise ConfigurationError(f"YAML object at path {path} is a set attribute, not an attribute mapping.")

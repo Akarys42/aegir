@@ -5,8 +5,6 @@ from typing import Any, Dict, Union
 EntryType = Any
 # A map of an attribute name to its value.
 _EntryMapping = Dict[str, EntryType]
-# A map of a dotted path to its `_EntryMapping`.
-_EntryMappingRegistry = Dict[str, _EntryMapping]
 
 # A YAML structure from a loaded file.
 YAMLStructure = Dict[str, Union["YAMLStructure", EntryType]]

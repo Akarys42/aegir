@@ -1,51 +1,34 @@
-from typing import List
-
 import yaml
 
 from smartconfig import _registry
 from smartconfig.constructors import _ref_constructor
-from smartconfig.typehints import YAMLStructure, _EntryMappingRegistry, _FilePath
+from smartconfig.typehints import YAMLStructure, _FilePath
 
 
-def _restructure_yaml(
-        node: YAMLStructure,
-        node_path: List[str] = None,
-        result: _EntryMappingRegistry = None
-) -> _EntryMappingRegistry:
+def _recursively_update_mapping(source: YAMLStructure, dest: YAMLStructure) -> YAMLStructure:
     """
-    Recursively fold the dictionary structure given by the YAML parser into a dotted path.
+    Recursively update the dest mapping with source.
+
+    If a key contains a dot, it will be considered as two nested dictionaries.
 
     Args:
-        node: The YAML dictionary structure of the node to process.
-        node_path: List of all the nodes needed to access this particular node, including the node itself.
-        result: The output constructed so far.
+        source: The update to apply.
+        dest: The mapping to update.
 
     Returns:
-         `result` with all the child nodes of `node_name` converted to a dotted path.
+        The modified dest mapping.
     """
-    if not node_path:
-        node_path = []
-    if not result:
-        result = {}
+    for key, value in source.items():
+        if '.' in key:
+            key, child_node = key.split('.', maxsplit=1)
+            dest[key] = _recursively_update_mapping({child_node: value}, dest.get(key, {}))
 
-    for child_node_name, child_node_value in node.items():
-        if isinstance(child_node_value, dict):
-            # We add them to make that we reset the node_path at each iteration.
-            child_node_path = node_path + [child_node_name]
-
-            result = _restructure_yaml(
-                child_node_value,
-                child_node_path,
-                result
-            )
+        elif isinstance(value, dict):
+            dest[key] = _recursively_update_mapping(value, dest.get(key, {}))
         else:
-            path = '.'.join(node_path)
+            dest[key] = value
 
-            if path not in result:
-                result[path] = {}
-            result[path][child_node_name] = child_node_value
-
-    return result
+    return dest
 
 
 def load(path: _FilePath) -> None:
@@ -66,19 +49,7 @@ def load(path: _FilePath) -> None:
     with open(path) as file:
         yaml_content = yaml.full_load(file)
 
-    for root_node_name, root_node_value in yaml_content.items():
-        if not isinstance(root_node_value, dict):
-            # We directly set it, there's no folding to do
-            _registry.global_configuration[root_node_name] = root_node_value
-            continue
-
-        restructured_yaml = _restructure_yaml(root_node_value, [root_node_name])
-
-        for path, patch in restructured_yaml.items():
-            # Update the global registry.
-            if path not in _registry.global_configuration:
-                _registry.global_configuration[path] = {}
-            _registry.global_configuration[path].update(patch)
+    _registry.global_configuration = _recursively_update_mapping(yaml_content, _registry.global_configuration)
 
 
 yaml.FullLoader.add_constructor("!REF", _ref_constructor)
