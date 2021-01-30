@@ -2,7 +2,7 @@ from itertools import chain
 from typing import Any, Dict, NoReturn, Optional, Tuple
 
 from smartconfig import _registry
-from smartconfig._registry import lookup_global_configuration
+from smartconfig._registry import configuration_for_module, global_configuration, lookup_global_configuration
 from smartconfig.exceptions import ConfigurationKeyError, InvalidOperation, PathConflict
 
 
@@ -19,28 +19,19 @@ class _ConfigEntryMeta(type):
         """
         Look up the attribute through the configuration system.
 
-        If the attribute name starts with `_`, normal lookup is done, otherwise registry.global_configuration is used.
+        If the attribute name starts with `_`, normal lookup is done, otherwise _registry.global_configuration is used.
 
         Args:
             name: Attribute to lookup
 
         Raises:
-            ConfigurationKeyError: The item doesn't exist.
+            ConfigurationKeyError: The attribute doesn't exist.
         """
         # Use the normal lookup for attribute starting with `_`
         if name.startswith('_'):
             return super().__getattribute__(name)
 
         path, attribute = cls._get_attribute_path(name)
-
-        if path not in _registry.global_configuration or attribute not in _registry.global_configuration[path]:
-            # We try to look it up from the class
-            try:
-                return super().__getattribute__(name)
-            except AttributeError:
-                raise ConfigurationKeyError(
-                    f"Entry {cls.__name__!r} at {path!r} has no attribute {attribute!r}."
-                ) from None
 
         return lookup_global_configuration(path, attribute)
 
@@ -64,13 +55,31 @@ class _ConfigEntryMeta(type):
         if cls.__path in _registry.configuration_for_module:
             raise PathConflict(f"An entry at {cls.__path!r} already exists.")  # TODO: Add an FAQ link.
 
-        _registry.configuration_for_module[cls.__path] = cls
+        configuration = {
+            key: value for key, value in cls.__dict__.items() if not key.startswith('_')
+        }
+
+        if cls.__path not in global_configuration:
+            global_configuration[cls.__path] = configuration
+        # We already have some overrides for this path.
+        else:
+            for key, value in configuration.items():
+                path, key = cls._get_attribute_path(key)
+
+                if path not in global_configuration:
+                    global_configuration[path] = {}
+
+                # We only write values that aren't already defined.
+                if key not in global_configuration[path]:
+                    global_configuration[path][key] = value
+
+        configuration_for_module[cls.__path] = cls
 
     def _check_undefined_entries(cls) -> None:
         """Raise `ConfigurationKeyError` if any attribute doesn't have a defined value."""
         for attribute in cls.__defined_attributes:
-            if not hasattr(cls, attribute) and attribute not in _registry.global_configuration[cls.__path]:
-                raise ConfigurationKeyError(f"Attribute {attribute!r} isn't defined.") from None
+            if attribute not in global_configuration[cls.__path]:
+                raise ConfigurationKeyError(f"Attribute {attribute!r} isn't defined.")
 
     def _get_attribute_path(cls, attribute_name: str) -> Tuple[str, str]:
         """
