@@ -3,7 +3,7 @@ from typing import Any, Dict, NoReturn, Optional, Tuple
 
 from smartconfig import _registry
 from smartconfig._registry import configuration_for_module, global_configuration, lookup_global_configuration
-from smartconfig.exceptions import ConfigurationKeyError, InvalidOperation, PathConflict
+from smartconfig.exceptions import ConfigurationKeyError, InvalidOperation, PathConflict, ConfigurationError
 
 
 class _ConfigEntryMeta(type):
@@ -39,7 +39,6 @@ class _ConfigEntryMeta(type):
             path: Custom path used for this entry instead of the module name.
         """
         names = chain(dict_.keys(), dict_.get('__annotations__', {}).keys())
-        dict_[f"{cls.__name__}__defined_attributes"] = {name for name in names if not name.startswith('_')}
 
         dict_[f"{cls.__name__}__path_override"] = path
 
@@ -60,9 +59,6 @@ class _ConfigEntryMeta(type):
         # We already have some overrides for this path.
         else:
             for key, value in configuration.items():
-                if cls.__path not in global_configuration:
-                    global_configuration[cls.__path] = {}
-
                 # We only write values that aren't already defined.
                 if key not in global_configuration[cls.__path]:
                     global_configuration[cls.__path][key] = value
@@ -71,9 +67,15 @@ class _ConfigEntryMeta(type):
 
     def _check_undefined_entries(cls) -> None:
         """Raise `ConfigurationKeyError` if any attribute doesn't have a defined value."""
-        for attribute in cls.__defined_attributes:
-            if attribute not in global_configuration[cls.__path]:
-                raise ConfigurationKeyError(f"Attribute {attribute!r} isn't defined.")
+        defined_attributes = [
+            name for name in chain(cls.__dict__.keys(), getattr(cls, "__annotations__", ())) if not name.startswith('_')
+        ]
+
+        for attribute in defined_attributes:
+            try:
+                lookup_global_configuration(cls.__path, attribute)
+            except (ConfigurationError, ConfigurationKeyError):
+                raise ConfigurationKeyError(f"Attribute {attribute!r} doesn't have a defined value.") from None
 
     def __init__(cls, name: str, bases: Tuple[type, ...], dict_: Dict[str, Any], path: Optional[str] = None):
         """
