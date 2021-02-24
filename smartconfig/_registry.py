@@ -3,17 +3,17 @@ Internal register used to reference entries.
 
 Attributes:
     global_configuration: A mapping of dotted paths to a mapping of attribute names and its value.
-    configuration_for_module: A mapping of dotted paths to the corresponding entry.
+    used_paths: A list of paths already containing an entry.
 """
 
-from typing import Dict, Optional
+from typing import Dict, Optional, Set
 
 import smartconfig
 from smartconfig.typehints import EntryType, YAMLStructure, _EntryMapping
 from .exceptions import ConfigurationError, ConfigurationKeyError
 
 global_configuration: YAMLStructure = {}
-configuration_for_module: Dict[str, "smartconfig.ConfigEntry"] = {}
+used_paths: Set["smartconfig.ConfigEntry"] = set()
 
 mapping_cache: Dict[str, _EntryMapping] = {}
 

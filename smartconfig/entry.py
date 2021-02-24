@@ -2,8 +2,8 @@ from itertools import chain
 from typing import Any, Dict, NoReturn, Optional, Tuple
 
 from smartconfig import _registry
-from smartconfig._registry import configuration_for_module, global_configuration, lookup_global_configuration
-from smartconfig.exceptions import ConfigurationKeyError, InvalidOperation, PathConflict, ConfigurationError
+from smartconfig._registry import global_configuration, lookup_global_configuration, used_paths
+from smartconfig.exceptions import ConfigurationError, ConfigurationKeyError, InvalidOperation, PathConflict
 
 
 class _ConfigEntryMeta(type):
@@ -38,8 +38,6 @@ class _ConfigEntryMeta(type):
         Args:
             path: Custom path used for this entry instead of the module name.
         """
-        names = chain(dict_.keys(), dict_.get('__annotations__', {}).keys())
-
         dict_[f"{cls.__name__}__path_override"] = path
 
         return super().__new__(cls, name, bases, dict_)
@@ -47,7 +45,7 @@ class _ConfigEntryMeta(type):
     def _register_entry(cls) -> None:
         """Set the `__path` attribute and register the entry."""
         cls.__path = cls.__path_override or cls.__module__
-        if cls.__path in _registry.configuration_for_module:
+        if cls.__path in _registry.used_paths:
             raise PathConflict(f"An entry at {cls.__path!r} already exists.")  # TODO: Add an FAQ link.
 
         configuration = {
@@ -63,7 +61,7 @@ class _ConfigEntryMeta(type):
                 if key not in global_configuration[cls.__path]:
                     global_configuration[cls.__path][key] = value
 
-        configuration_for_module[cls.__path] = cls
+        used_paths.add(cls.__path)
 
     def _check_undefined_entries(cls) -> None:
         """Raise `ConfigurationKeyError` if any attribute doesn't have a defined value."""
