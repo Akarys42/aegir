@@ -2,7 +2,10 @@ from typing import Any
 
 import yaml
 
+from smartconfig import InvalidOperation
 from smartconfig._registry import lookup_global_configuration
+
+_used_constructors = set()
 
 
 class AttributeReference:
@@ -14,6 +17,10 @@ class AttributeReference:
     """
 
     def __init__(self, path: str) -> None:
+        if path in _used_constructors:
+            raise InvalidOperation("Cannot point a REF constructor to another one.")
+        _used_constructors.add(path)
+
         if '.' in path:
             self.path, self.attribute = path.rsplit('.', maxsplit=1)
         else:
