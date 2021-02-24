@@ -39,6 +39,11 @@ def _lookup_mapping(path: str) -> _EntryMapping:
     current_node = global_configuration
 
     for node_name in path.split('.'):
+        if not isinstance(current_node, dict):
+            raise ConfigurationError(
+                f"YAML object {node_name} on the path {path} is a set attribute, not an attribute mapping."
+            )
+
         if node_name not in current_node:
             raise ConfigurationKeyError(f"No override exists for the path {path!r}.")
 
