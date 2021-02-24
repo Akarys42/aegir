@@ -11,8 +11,6 @@ class _ConfigEntryMeta(type):
     Metaclass used to define special ConfigEntry behaviors.
 
     Note: Using this metaclass outside of the library is currently not supported.
-
-    The lookup of attributes can be customized by subclassing this metaclass and changing `_get_attribute_path`.
     """
 
     def __getattribute__(cls, name: str) -> Optional[Any]:
@@ -31,9 +29,7 @@ class _ConfigEntryMeta(type):
         if name.startswith('_'):
             return super().__getattribute__(name)
 
-        path, attribute = cls._get_attribute_path(name)
-
-        return lookup_global_configuration(path, attribute)
+        return lookup_global_configuration(cls.__path, name)
 
     def __new__(cls, name: str, bases: Tuple[type, ...], dict_: Dict[str, Any], path: Optional[str] = None) -> type:
         """
@@ -64,14 +60,12 @@ class _ConfigEntryMeta(type):
         # We already have some overrides for this path.
         else:
             for key, value in configuration.items():
-                path, key = cls._get_attribute_path(key)
-
-                if path not in global_configuration:
-                    global_configuration[path] = {}
+                if cls.__path not in global_configuration:
+                    global_configuration[cls.__path] = {}
 
                 # We only write values that aren't already defined.
-                if key not in global_configuration[path]:
-                    global_configuration[path][key] = value
+                if key not in global_configuration[cls.__path]:
+                    global_configuration[cls.__path][key] = value
 
         configuration_for_module[cls.__path] = cls
 
@@ -80,20 +74,6 @@ class _ConfigEntryMeta(type):
         for attribute in cls.__defined_attributes:
             if attribute not in global_configuration[cls.__path]:
                 raise ConfigurationKeyError(f"Attribute {attribute!r} isn't defined.")
-
-    def _get_attribute_path(cls, attribute_name: str) -> Tuple[str, str]:
-        """
-        Returns which path to use to lookup the attribute.
-
-        By default `(cls.__path, attribute_name)` will be returned.
-
-        Args:
-            attribute_name: The name of the attribute to lookup.
-
-        Returns:
-            A tuple with the configuration path as the first element and the element name to lookup.
-        """
-        return cls.__path, attribute_name
 
     def __init__(cls, name: str, bases: Tuple[type, ...], dict_: Dict[str, Any], path: Optional[str] = None):
         """
