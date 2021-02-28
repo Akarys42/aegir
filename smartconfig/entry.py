@@ -2,8 +2,9 @@ from itertools import chain
 from typing import Any, Dict, NoReturn, Optional, Tuple
 
 from smartconfig import _registry
-from smartconfig._registry import global_configuration, lookup_global_configuration, used_paths
+from smartconfig._registry import global_configuration, lookup_global_configuration, used_paths, _unload_defaults
 from smartconfig.exceptions import ConfigurationError, ConfigurationKeyError, InvalidOperation, PathConflict
+from smartconfig.file import _recursively_update_mapping
 
 
 class _ConfigEntryMeta(type):
@@ -52,14 +53,15 @@ class _ConfigEntryMeta(type):
             key: value for key, value in cls.__dict__.items() if not key.startswith('_')
         }
 
-        if cls.__path not in global_configuration:
-            global_configuration[cls.__path] = configuration
-        # We already have some overrides for this path.
-        else:
-            for key, value in configuration.items():
-                # We only write values that aren't already defined.
-                if key not in global_configuration[cls.__path]:
-                    global_configuration[cls.__path][key] = value
+        current_node = _registry.global_configuration
+
+        for node_name in cls.__path.split("."):
+            current_node = current_node.setdefault(node_name, {})
+
+        for key, value in configuration.items():
+            # We only write values that aren't already defined.
+            if key not in current_node:
+                current_node[key] = value
 
         used_paths.add(cls.__path)
 
@@ -87,6 +89,10 @@ class _ConfigEntryMeta(type):
 
         cls._register_entry()
         cls._check_undefined_entries()
+
+    def __del__(cls) -> None:
+        """Cleanup the defaults from the global configuration."""
+        _unload_defaults(cls.__path)
 
     def __repr__(cls) -> str:
         """Return a short representation of the entry."""

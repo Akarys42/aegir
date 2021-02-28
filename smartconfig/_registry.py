@@ -3,10 +3,11 @@ Internal register used to reference entries.
 
 Attributes:
     global_configuration: A mapping of dotted paths to a mapping of attribute names and its value.
-    used_paths: A list of paths already containing an entry.
+    used_paths: A set of paths already containing an entry.
+    overwrote_attributes: A set of paths that have been overwritten by a configuration file.
 """
 
-from typing import Dict, Optional, Set
+from typing import Dict, Optional, Set, Union
 
 import smartconfig
 from smartconfig.typehints import EntryType, YAMLStructure, _EntryMapping
@@ -14,6 +15,7 @@ from .exceptions import ConfigurationError, ConfigurationKeyError
 
 global_configuration: YAMLStructure = {}
 used_paths: Set["smartconfig.ConfigEntry"] = set()
+overwrote_attributes: Set[str] = set()
 
 mapping_cache: Dict[str, _EntryMapping] = {}
 
@@ -53,7 +55,24 @@ def _lookup_mapping(path: str) -> _EntryMapping:
     return current_node
 
 
-def lookup_global_configuration(path: str, attribute: Optional[str]) -> EntryType:
+def _unload_defaults(path: str) -> None:
+    """
+    Remove default values present at the provided path.
+
+    Args:
+        path: The path to the entry to unload default.
+    """
+    try:
+        node = lookup_global_configuration(path, None)
+    except (ConfigurationError, ConfigurationKeyError):
+        return
+
+    for attribute in node.copy():
+        if attribute not in overwrote_attributes:
+            node.pop(attribute)
+
+
+def lookup_global_configuration(path: str, attribute: Optional[str]) -> Union[dict, EntryType]:
     """
     Returns the `attribute` at the `path` in the global configuration.
 

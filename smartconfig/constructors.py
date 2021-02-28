@@ -2,7 +2,7 @@ from typing import Any
 
 import yaml
 
-from smartconfig import InvalidOperation
+from smartconfig.exceptions import InvalidOperation
 from smartconfig._registry import lookup_global_configuration
 
 _used_constructors = set()

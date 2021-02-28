@@ -5,7 +5,7 @@ from smartconfig.constructors import _ref_constructor
 from smartconfig.typehints import YAMLStructure, _FilePath
 
 
-def _recursively_update_mapping(source: YAMLStructure, dest: YAMLStructure) -> YAMLStructure:
+def _recursively_update_mapping(source: YAMLStructure, dest: YAMLStructure, path: str = "") -> YAMLStructure:
     """
     Recursively update the dest mapping with source.
 
@@ -14,6 +14,7 @@ def _recursively_update_mapping(source: YAMLStructure, dest: YAMLStructure) -> Y
     Args:
         source: The update to apply.
         dest: The mapping to update.
+        path: The dotted path needed to reach dest.
 
     Returns:
         The modified dest mapping.
@@ -21,11 +22,12 @@ def _recursively_update_mapping(source: YAMLStructure, dest: YAMLStructure) -> Y
     for key, value in source.items():
         if '.' in key:
             key, child_node = key.split('.', maxsplit=1)
-            dest[key] = _recursively_update_mapping({child_node: value}, dest.get(key, {}))
+            dest[key] = _recursively_update_mapping({child_node: value}, dest.get(key, {}), path + key)
 
         elif isinstance(value, dict):
-            dest[key] = _recursively_update_mapping(value, dest.get(key, {}))
+            dest[key] = _recursively_update_mapping(value, dest.get(key, {}), path + key)
         else:
+            _registry.overwrote_attributes.add(path + key)
             dest[key] = value
 
     return dest
