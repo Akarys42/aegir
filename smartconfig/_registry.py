@@ -2,7 +2,7 @@
 Internal register used to reference entries.
 
 Attributes:
-    global_configuration: A mapping of dotted paths to a mapping of attribute names and its value.
+    global_configuration: A mapping of dot-delimited paths to a mapping of attribute names and their values.
     used_paths: A set of paths already containing an entry.
     overwritten_attributes: A set of paths that have been overwritten by a configuration file.
 """
@@ -17,23 +17,24 @@ global_configuration: YAMLStructure = {}
 used_paths: Set["smartconfig.ConfigEntry"] = set()
 overwritten_attributes: Set[str] = set()
 
-mapping_cache: Dict[str, _EntryMapping] = {}
+mapping_cache: YAMLStructure = {}
 
 
-def _lookup_mapping(path: str) -> _EntryMapping:
+def _get_node(path: str) -> EntryType:
     """
-    Lookup a mapping node.
+    Retrieve the node located at `path` from the global configuration.
 
-    Will try to use the mapping_cache when possible.
+    Try to use the mapping_cache when possible.
 
     Args:
-         path: Dotted path of the mapping to lookup.
+         path: The dot-delimited path to the node.
 
     Returns:
-        The entry mapping at the requested path.
+        The node at the requested path.
 
     Raises:
-        ConfigurationKeyError: No override exists for this path.
+        ConfigurationError: A node along the path is not a mapping node.
+        ConfigurationKeyError: The path does not exist.
     """
     if path in mapping_cache:
         return mapping_cache[path]
@@ -42,12 +43,10 @@ def _lookup_mapping(path: str) -> _EntryMapping:
 
     for node_name in path.split('.'):
         if not isinstance(current_node, dict):
-            raise ConfigurationError(
-                f"YAML object {node_name} on the path {path} is a set attribute, not an attribute mapping."
-            )
+            raise ConfigurationError(f"Cannot retrieve {path!r}: the YAML node {node_name!r} is not a mapping node.")
 
         if node_name not in current_node:
-            raise ConfigurationKeyError(f"No override exists for the path {path!r}.")
+            raise ConfigurationKeyError(f"Cannot retrieve {path!r}: {node_name!r} does not exist.")
 
         current_node = current_node[node_name]
 
@@ -57,10 +56,10 @@ def _lookup_mapping(path: str) -> _EntryMapping:
 
 def _unload_defaults(path: str) -> None:
     """
-    Remove default values present at the provided path.
+    Remove the default values of all child attributes at `path`.
 
     Args:
-        path: The path to the entry to unload default.
+        path: The dot-delimited path to the parent node.
     """
     try:
         node = lookup_global_configuration(path, None)
@@ -74,19 +73,20 @@ def _unload_defaults(path: str) -> None:
 
 def lookup_global_configuration(path: str, attribute: Optional[str]) -> Union[dict, EntryType]:
     """
-    Returns the `attribute` at the `path` in the global configuration.
+    Return the `attribute` at the `path` in the global configuration.
 
     Args:
-        path: The entry path to use.
-        attribute: The attribute to look up. The whole entry mapping will be returned if None.
+        path: The dot-delimited path to the parent of the attribute to find.
+        attribute: The name of the attribute to find. If None, return a dictionary of all attributes under the path.
 
     Returns:
-        The attribute or the whole entry mapping if `attribute` is None.
+        The value of the attribute or a dictionary of all child attributes if `attribute` is None.
 
     Raises:
-        ConfigurationKeyError: The path or the attribute doesn't exist, or the YAML object isn't an attribute mapping.
+        ConfigurationError: A node along the path is not a mapping node.
+        ConfigurationKeyError: The path or the attribute doesn't exist, or the path does not consist of mapping nodes.
     """
-    node = _lookup_mapping(path)
+    node = _get_node(path)
 
     if not attribute:
         entry = node
@@ -94,10 +94,10 @@ def lookup_global_configuration(path: str, attribute: Optional[str]) -> Union[di
         mapping = node
 
         if not isinstance(mapping, dict):
-            raise ConfigurationError(f"YAML object at path {path} is a set attribute, not an attribute mapping.")
+            raise ConfigurationError(f"Cannot retrieve {attribute!r}: YAML node at {path!r} is not a mapping node.")
 
         if attribute not in mapping:
-            raise ConfigurationKeyError(f"No attribute {attribute} exists for the path {path}.")
+            raise ConfigurationKeyError(f"Cannot retrieve {attribute!r}: attribute does not exist at {path!r}.")
 
         entry = mapping[attribute]
 
