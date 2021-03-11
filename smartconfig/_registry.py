@@ -4,7 +4,7 @@ Internal register used to reference entries.
 Attributes:
     global_configuration: A mapping of dotted paths to a mapping of attribute names and its value.
     used_paths: A set of paths already containing an entry.
-    overwrote_attributes: A set of paths that have been overwritten by a configuration file.
+    overwritten_attributes: A set of paths that have been overwritten by a configuration file.
 """
 
 from typing import Dict, Optional, Set, Union
@@ -15,7 +15,7 @@ from .exceptions import ConfigurationError, ConfigurationKeyError
 
 global_configuration: YAMLStructure = {}
 used_paths: Set["smartconfig.ConfigEntry"] = set()
-overwrote_attributes: Set[str] = set()
+overwritten_attributes: Set[str] = set()
 
 mapping_cache: Dict[str, _EntryMapping] = {}
 
@@ -68,7 +68,7 @@ def _unload_defaults(path: str) -> None:
         return
 
     for attribute in node.copy():
-        if attribute not in overwrote_attributes:
+        if attribute not in overwritten_attributes:
             node.pop(attribute)
 
 

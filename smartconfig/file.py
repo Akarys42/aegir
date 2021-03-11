@@ -27,7 +27,7 @@ def _recursively_update_mapping(source: YAMLStructure, dest: YAMLStructure, path
         elif isinstance(value, dict):
             dest[key] = _recursively_update_mapping(value, dest.get(key, {}), path + key)
         else:
-            _registry.overwrote_attributes.add(path + key)
+            _registry.overwritten_attributes.add(path + key)
             dest[key] = value
 
     return dest
