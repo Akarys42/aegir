@@ -7,10 +7,10 @@ Attributes:
     overwritten_attributes: A set of paths that have been overwritten by a configuration file.
 """
 
-from typing import Dict, Optional, Set, Union
+from typing import Optional, Set, Union
 
 import smartconfig
-from smartconfig.typehints import EntryType, YAMLStructure, _EntryMapping
+from smartconfig.typehints import EntryType, YAMLStructure
 from .exceptions import ConfigurationError, ConfigurationKeyError
 
 global_configuration: YAMLStructure = {}
@@ -20,11 +20,58 @@ overwritten_attributes: Set[str] = set()
 mapping_cache: YAMLStructure = {}
 
 
-def _get_node(path: str) -> EntryType:
+def _get_child_node(node_name: str, root: YAMLStructure):
     """
-    Retrieve the node located at `path` from the global configuration.
+    Retrieve the value of the node `node_name` which is a child of the `root` node.
 
-    Try to use the mapping_cache when possible.
+    Args:
+        node_name: The name of the child node to retrieve.
+        root: The parent node of the node to retrieve.
+
+    Returns:
+        The value of the child node.
+
+    Raises:
+        ConfigurationError: The parent is not a mapping node.
+        ConfigurationKeyError: The child node does not exist.
+    """
+    if not isinstance(root, dict):
+        raise ConfigurationError(f"Cannot retrieve node {node_name!r}: its parent is not a mapping node.")
+
+    if node_name not in root:
+        raise ConfigurationKeyError(f"Cannot retrieve node {node_name!r}: it does not exist.")
+
+    node = root[node_name]
+
+    # Use __get__ if the node is a descriptor.
+    if hasattr(node, '__get__'):
+        node = node.__get__()
+
+    return node
+
+
+def _unload_defaults(path: str) -> None:
+    """
+    Remove the default values of all children of `path`.
+
+    Args:
+        path: The dot-delimited path to the parent node.
+    """
+    try:
+        node = get_node(path)
+    except (ConfigurationError, ConfigurationKeyError):
+        return
+
+    for attribute in node.copy():
+        if attribute not in overwritten_attributes:
+            node.pop(attribute)
+
+
+def get_node(path: str) -> EntryType:
+    """
+    Retrieve the value of the node located at `path` from the global configuration.
+
+    Cache the node if it's a mapping. If the path is cached, retrieve the node from the cache.
 
     Args:
          path: The dot-delimited path to the node.
@@ -39,70 +86,32 @@ def _get_node(path: str) -> EntryType:
     if path in mapping_cache:
         return mapping_cache[path]
 
-    current_node = global_configuration
+    node = global_configuration
 
     for node_name in path.split('.'):
-        if not isinstance(current_node, dict):
-            raise ConfigurationError(f"Cannot retrieve {path!r}: the YAML node {node_name!r} is not a mapping node.")
+        node = _get_child_node(node_name, node)
 
-        if node_name not in current_node:
-            raise ConfigurationKeyError(f"Cannot retrieve {path!r}: {node_name!r} does not exist.")
+    # Only cache mapping nodes.
+    if isinstance(node, dict):
+        mapping_cache[path] = node
 
-        current_node = current_node[node_name]
-
-    mapping_cache[path] = current_node
-    return current_node
+    return node
 
 
-def _unload_defaults(path: str) -> None:
+def get_attribute(path: str, attribute: str) -> EntryType:
     """
-    Remove the default values of all child attributes at `path`.
+    Retrieve the value of the `attribute` under `path` from the global configuration.
 
     Args:
-        path: The dot-delimited path to the parent node.
-    """
-    try:
-        node = lookup_global_configuration(path, None)
-    except (ConfigurationError, ConfigurationKeyError):
-        return
-
-    for attribute in node.copy():
-        if attribute not in overwritten_attributes:
-            node.pop(attribute)
-
-
-def lookup_global_configuration(path: str, attribute: Optional[str]) -> Union[dict, EntryType]:
-    """
-    Return the `attribute` at the `path` in the global configuration.
-
-    Args:
-        path: The dot-delimited path to the parent of the attribute to find.
-        attribute: The name of the attribute to find. If None, return a dictionary of all attributes under the path.
+        path: The dot-delimited path to the parent of the attribute to retrieve.
+        attribute: The name of the attribute to find
 
     Returns:
-        The value of the attribute or a dictionary of all child attributes if `attribute` is None.
+        The value of the attribute.
 
     Raises:
         ConfigurationError: A node along the path is not a mapping node.
-        ConfigurationKeyError: The path or the attribute doesn't exist, or the path does not consist of mapping nodes.
+        ConfigurationKeyError: The path or the attribute doesn't exist.
     """
-    node = _get_node(path)
-
-    if not attribute:
-        entry = node
-    else:
-        mapping = node
-
-        if not isinstance(mapping, dict):
-            raise ConfigurationError(f"Cannot retrieve {attribute!r}: YAML node at {path!r} is not a mapping node.")
-
-        if attribute not in mapping:
-            raise ConfigurationKeyError(f"Cannot retrieve {attribute!r}: attribute does not exist at {path!r}.")
-
-        entry = mapping[attribute]
-
-    # Use __get__ if the attribute is a descriptor
-    if hasattr(entry, '__get__'):
-        entry = entry.__get__()
-
-    return entry
+    parent = get_node(path)
+    return _get_child_node(attribute, parent)

@@ -3,7 +3,7 @@ from typing import Any
 import yaml
 
 from smartconfig.exceptions import InvalidOperation
-from smartconfig._registry import lookup_global_configuration
+from smartconfig._registry import get_attribute, get_node
 
 _used_constructors = set()
 
@@ -28,7 +28,10 @@ class AttributeReference:
             self.attribute = None
 
     def __get__(self, *_) -> Any:
-        return lookup_global_configuration(self.path, self.attribute)
+        if self.attribute is not None:
+            return get_attribute(self.path, self.attribute)
+        else:
+            return get_node(self.path)
 
     def __set__(self, *_) -> None:
         return

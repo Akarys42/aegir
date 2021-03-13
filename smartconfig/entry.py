@@ -2,7 +2,7 @@ from itertools import chain
 from typing import Any, Dict, NoReturn, Optional, Tuple
 
 from smartconfig import _registry
-from smartconfig._registry import global_configuration, lookup_global_configuration, used_paths, _unload_defaults
+from smartconfig._registry import global_configuration, get_attribute, used_paths, _unload_defaults
 from smartconfig.exceptions import ConfigurationError, ConfigurationKeyError, InvalidOperation, PathConflict
 from smartconfig.file import _recursively_update_mapping
 
@@ -30,7 +30,7 @@ class _ConfigEntryMeta(type):
         if name.startswith('_'):
             return super().__getattribute__(name)
 
-        return lookup_global_configuration(cls.__path, name)
+        return get_attribute(cls.__path, name)
 
     def __new__(cls, name: str, bases: Tuple[type, ...], dict_: Dict[str, Any], path: Optional[str] = None) -> type:
         """
@@ -73,7 +73,7 @@ class _ConfigEntryMeta(type):
 
         for attribute in defined_attributes:
             try:
-                lookup_global_configuration(cls.__path, attribute)
+                get_attribute(cls.__path, attribute)
             except (ConfigurationError, ConfigurationKeyError):
                 raise ConfigurationKeyError(f"Attribute {attribute!r} doesn't have a defined value.") from None
 
