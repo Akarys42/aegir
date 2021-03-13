@@ -7,7 +7,9 @@ Attributes:
     overwritten_attributes: A set of paths that have been overwritten by a configuration file.
 """
 
-from typing import Optional, Set, Union
+import copy
+from collections.abc import Mapping, MutableMapping
+from typing import Set
 
 import smartconfig
 from smartconfig.typehints import EntryType, YAMLStructure
@@ -35,7 +37,7 @@ def _get_child_node(node_name: str, root: YAMLStructure):
         ConfigurationError: The parent is not a mapping node.
         ConfigurationKeyError: The child node does not exist.
     """
-    if not isinstance(root, dict):
+    if not isinstance(root, Mapping):
         raise ConfigurationError(f"Cannot retrieve node {node_name!r}: its parent is not a mapping node.")
 
     if node_name not in root:
@@ -62,10 +64,10 @@ def _unload_defaults(path: str) -> None:
     except (ConfigurationError, ConfigurationKeyError):
         return
 
-    if not isinstance(node, dict):
+    if not isinstance(node, MutableMapping):
         return
 
-    for attribute in node.copy():
+    for attribute in copy.copy(node):
         if attribute not in overwritten_attributes:
             node.pop(attribute)
 
@@ -95,7 +97,7 @@ def get_node(path: str) -> EntryType:
         node = _get_child_node(node_name, node)
 
     # Only cache mapping nodes.
-    if isinstance(node, dict):
+    if isinstance(node, Mapping):
         mapping_cache[path] = node
 
     return node
