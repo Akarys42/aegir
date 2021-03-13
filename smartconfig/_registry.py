@@ -62,6 +62,9 @@ def _unload_defaults(path: str) -> None:
     except (ConfigurationError, ConfigurationKeyError):
         return
 
+    if not isinstance(node, dict):
+        return
+
     for attribute in node.copy():
         if attribute not in overwritten_attributes:
             node.pop(attribute)
