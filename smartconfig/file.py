@@ -5,27 +5,36 @@ from smartconfig.constructors import _ref_constructor
 from smartconfig.typehints import YAMLStructure, _FilePath
 
 
-def _recursively_update_mapping(source: YAMLStructure, dest: YAMLStructure, path: str = "") -> YAMLStructure:
+def _update_mapping(source: YAMLStructure, dest: YAMLStructure, path: str = "") -> YAMLStructure:
     """
-    Recursively update the dest mapping with source.
+    Recursively update the `dest` mapping with values from `source`.
 
-    If a key contains a dot, it will be considered as two nested dictionaries.
+    Overwrite any non-mapping value in `dest` with the value from `source`.
+    Expand keys which are strings of dot-delimited paths into nested mapping nodes. For example,
+
+    a.b.c: 1
+
+    becomes
+
+    a:
+      b:
+        c: 1
 
     Args:
-        source: The update to apply.
+        source: The mapping with the new values.
         dest: The mapping to update.
-        path: The dotted path needed to reach dest.
+        path: The dot-delimited path to `dest`.
 
     Returns:
-        The modified dest mapping.
+        The updated dest mapping.
     """
     for key, value in source.items():
         if '.' in key:
             key, child_node = key.split('.', maxsplit=1)
-            dest[key] = _recursively_update_mapping({child_node: value}, dest.get(key, {}), path + key)
+            dest[key] = _update_mapping({child_node: value}, dest.get(key, {}), path + key)
 
         elif isinstance(value, dict):
-            dest[key] = _recursively_update_mapping(value, dest.get(key, {}), path + key)
+            dest[key] = _update_mapping(value, dest.get(key, {}), path + key)
         else:
             _registry.overwritten_attributes.add(path + key)
             dest[key] = value
@@ -51,7 +60,7 @@ def load(path: _FilePath) -> None:
     with open(path) as file:
         yaml_content = yaml.full_load(file)
 
-    _registry.global_configuration = _recursively_update_mapping(yaml_content, _registry.global_configuration)
+    _registry.global_configuration = _update_mapping(yaml_content, _registry.global_configuration)
 
 
 yaml.FullLoader.add_constructor("!REF", _ref_constructor)

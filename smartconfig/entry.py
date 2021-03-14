@@ -4,7 +4,6 @@ from typing import Any, Dict, NoReturn, Optional, Tuple
 from smartconfig import _registry
 from smartconfig._registry import global_configuration, get_attribute, used_paths, _unload_defaults
 from smartconfig.exceptions import ConfigurationError, ConfigurationKeyError, InvalidOperation, PathConflict
-from smartconfig.file import _recursively_update_mapping
 
 
 class _ConfigEntryMeta(type):
