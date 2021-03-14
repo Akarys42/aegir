@@ -1,11 +1,12 @@
 import yaml
+from os import PathLike
+from typing import Mapping, MutableMapping, Union
 
 from smartconfig import _registry
 from smartconfig.constructors import _ref_constructor
-from smartconfig.typehints import YAMLStructure, _FilePath
 
 
-def _update_mapping(source: YAMLStructure, dest: YAMLStructure, path: str = "") -> YAMLStructure:
+def _update_mapping(source: Mapping, dest: MutableMapping, path: str = "") -> MutableMapping:
     """
     Recursively update the `dest` mapping with values from `source`.
 
@@ -33,7 +34,7 @@ def _update_mapping(source: YAMLStructure, dest: YAMLStructure, path: str = "") 
             key, child_node = key.split('.', maxsplit=1)
             dest[key] = _update_mapping({child_node: value}, dest.get(key, {}), path + key)
 
-        elif isinstance(value, dict):
+        elif isinstance(value, Mapping):
             dest[key] = _update_mapping(value, dest.get(key, {}), path + key)
         else:
             _registry.overwritten_attributes.add(path + key)
@@ -42,7 +43,7 @@ def _update_mapping(source: YAMLStructure, dest: YAMLStructure, path: str = "") 
     return dest
 
 
-def load(path: _FilePath) -> None:
+def load(path: Union[str, bytes, PathLike]) -> None:
     """
     Load a YAML configuration file and update configuration entries.
 

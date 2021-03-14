@@ -9,7 +9,6 @@ from smartconfig.exceptions import (
     SmartconfigException
 )
 from smartconfig.file import load
-from smartconfig.typehints import EntryType
 
 __version__ = "0.0.0-dev1"
 
@@ -19,7 +18,4 @@ __all__ = (
 
     # Exceptions
     "SmartconfigException", "ConfigurationKeyError", "PathConflict", "InvalidOperation", "ConfigurationError",
-
-    # Typehinting
-    "EntryType",
 )

@@ -8,21 +8,19 @@ Attributes:
 """
 
 import copy
-from collections.abc import Mapping, MutableMapping
-from typing import Set
+from typing import Any, Dict, Hashable, Mapping, MutableMapping, Set
 
 import smartconfig
-from smartconfig.typehints import EntryType, YAMLStructure
 from .exceptions import ConfigurationError, ConfigurationKeyError
 
-global_configuration: YAMLStructure = {}
+global_configuration: Dict[Hashable, Any] = {}
 used_paths: Set["smartconfig.ConfigEntry"] = set()
 overwritten_attributes: Set[str] = set()
 
-mapping_cache: YAMLStructure = {}
+mapping_cache: Dict[str, Mapping] = {}
 
 
-def _get_child_node(node_name: str, root: YAMLStructure):
+def _get_child_node(node_name: str, root: Any):
     """
     Retrieve the value of the node `node_name` which is a child of the `root` node.
 
@@ -72,7 +70,7 @@ def _unload_defaults(path: str) -> None:
             node.pop(attribute)
 
 
-def get_node(path: str) -> EntryType:
+def get_node(path: str) -> Any:
     """
     Retrieve the value of the node located at `path` from the global configuration.
 
@@ -103,7 +101,7 @@ def get_node(path: str) -> EntryType:
     return node
 
 
-def get_attribute(path: str, attribute: str) -> EntryType:
+def get_attribute(path: str, attribute: str) -> Any:
     """
     Retrieve the value of the `attribute` under `path` from the global configuration.
 
