@@ -61,7 +61,8 @@ def load(path: Union[str, bytes, PathLike]) -> None:
     with open(path) as file:
         yaml_content = yaml.full_load(file)
 
-    _registry.global_configuration = _update_mapping(yaml_content, _registry.global_configuration)
+    if isinstance(yaml_content, Mapping):
+        _registry.global_configuration = _update_mapping(yaml_content, _registry.global_configuration)
 
 
 yaml.FullLoader.add_constructor("!REF", _ref_constructor)
