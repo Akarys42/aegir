@@ -45,18 +45,44 @@ def _update_mapping(source: Mapping, dest: MutableMapping, path: str = "") -> Mu
 
 def load(path: Union[str, bytes, PathLike]) -> None:
     """
-    Load a YAML configuration file and update configuration entries.
+    Read a YAML file at `path` and update the configuration with its values.
 
-    The values set in the YAML file will override values already defined in the `ConfigEntry`.
-    For each section, the name of previous sections will be concatenated in order to make the full path of the entry
-    to override.
+    Overwrite default values set in `ConfigEntry` objects with values from the YAML file. A YAML node overwrites an
+    attribute of a `ConfigEntry` if their paths are equal. The path of the node is the dot-delimited concatenation of
+    its parents' keys with its own key. In the following example, the path of the node 'class' is 'module.class'.
+
+    module:
+      class:
+        attribute_1: value
+
+    Nodes may be fully expanded (like above), partially collapsed, or fully collapsed. A `ConfigEntry` node's definition
+    could be split by using different levels of expansion. For example,
+
+    module:
+      class:
+        attribute_1: value
+
+    module.class:
+      attribute_2: value
+
+    module.class:
+      attribute_3: value
+
+    would overwrite `attribute_1` and `attribute_3` of the `ConfigEntry` for the path 'package.module'. When a key is
+    defined multiple times, the last definition is the one used. Therefore, `attribute_2` is not included.
+
+    The YAML does not strictly have to contain nodes that correspond to `ConfigEntry` objects. For example, it's valid
+    to have a non-`ConfigEntry` node marked by an anchor which is later referenced in some node that does correspond to
+    a `ConfigEntry`. There could be nodes that are simply not used at all. It's even valid for the root to not be a
+    mapping node. Such file would effectively configure nothing, but loading it is still supported.
 
     Args:
-        path: The path to the configuration file. Can be a string or an object defining `os.PathLike`.
+        path: The path to the configuration file.
 
     Raises:
         FileNotFoundError: The configuration file doesn't exist.
         IOError: An error occurred when reading the file.
+        yaml.YAMLError: PyYAML failed to load the YAML.
     """
     with open(path) as file:
         yaml_content = yaml.full_load(file)
