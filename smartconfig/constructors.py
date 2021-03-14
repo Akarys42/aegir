@@ -10,10 +10,10 @@ _used_constructors = set()
 
 class AttributeReference:
     """
-    A descriptor referencing another attribute.
+    A descriptor referencing an attribute in a config entry.
 
     Args:
-        path: A comma separated path to the attribute you want to reference.
+        path: A dot-delimited path to the attribute being referenced.
     """
 
     def __init__(self, path: str) -> None:
