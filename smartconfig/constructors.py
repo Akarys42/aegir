@@ -21,6 +21,8 @@ class AttributeReference:
             raise InvalidOperation("Cannot point a REF constructor to another one.")
         _used_constructors.add(path)
 
+        self.full_path = path
+
         if '.' in path:
             self.path, self.attribute = path.rsplit('.', maxsplit=1)
         else:
@@ -37,7 +39,7 @@ class AttributeReference:
         return
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(path={self.path}.{self.attribute})"
+        return f"{self.__class__.__name__}(path={self.full_path})"
 
 
 def _ref_constructor(loader: yaml.SafeLoader, node: yaml.Node) -> AttributeReference:
