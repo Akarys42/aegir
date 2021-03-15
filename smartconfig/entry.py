@@ -2,7 +2,7 @@ from itertools import chain
 from typing import Any, Dict, NoReturn, Optional, Tuple
 
 from smartconfig import _registry
-from smartconfig._registry import global_configuration, get_attribute, used_paths, _unload_defaults
+from smartconfig._registry import global_configuration, get_attribute, used_paths, unload_defaults
 from smartconfig.exceptions import ConfigurationError, ConfigurationKeyError, InvalidOperation, PathConflict
 
 
@@ -91,7 +91,7 @@ class _ConfigEntryMeta(type):
 
     def __del__(cls) -> None:
         """Cleanup the defaults from the global configuration."""
-        _unload_defaults(cls.__path)
+        unload_defaults(cls.__path)
 
     def __repr__(cls) -> str:
         """Return a short representation of the entry."""

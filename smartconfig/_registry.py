@@ -50,7 +50,7 @@ def _get_child_node(node_name: str, root: Any):
     return node
 
 
-def _unload_defaults(path: str) -> None:
+def unload_defaults(path: str) -> None:
     """
     Remove the default values of all children of `path`.
 
