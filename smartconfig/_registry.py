@@ -2,9 +2,10 @@
 Internal register used to reference entries.
 
 Attributes:
-    global_configuration: A mapping of dot-delimited paths to a mapping of attribute names and their values.
+    global_configuration: The full configuration loaded from the YAML file along with all default values for entries.
     used_paths: A set of paths already containing an entry.
     overwritten_attributes: A set of paths that have been overwritten by a configuration file.
+    mapping_cache: A mapping of dot-delimited paths to their corresponding mappings in the config.
 """
 
 import copy
@@ -16,7 +17,6 @@ from .exceptions import ConfigurationError, ConfigurationKeyError
 global_configuration: Dict[Hashable, Any] = {}
 used_paths: Set["smartconfig.ConfigEntry"] = set()
 overwritten_attributes: Set[str] = set()
-
 mapping_cache: Dict[str, Mapping] = {}
 
 
