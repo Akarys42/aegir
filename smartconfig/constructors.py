@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, NoReturn
 
 import yaml
 
@@ -35,8 +35,8 @@ class AttributeReference:
         else:
             return get_node(self.path)
 
-    def __set__(self, *_) -> None:
-        return
+    def __set__(self, *_) -> NoReturn:
+        raise NotImplementedError("Setting values of REF constructors isn't allowed.")
 
     def __repr__(self):
         return f"{self.__class__.__name__}(path={self.full_path})"
