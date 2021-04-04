@@ -115,6 +115,7 @@ def load(path: Union[str, bytes, PathLike]) -> None:
         FileNotFoundError: The configuration file doesn't exist.
         IOError: An error occurred when reading the file.
         yaml.YAMLError: PyYAML failed to load the YAML.
+        InvalidOperation: A !REF constructor contains a circular reference.
     """
     with open(path) as file:
         yaml_content = yaml.full_load(file)
