@@ -63,7 +63,7 @@ def unload_defaults(path: str) -> None:
         return
 
     if not isinstance(node, MutableMapping):
-        return
+        raise ConfigurationError(f"Node at path {path!r} isn't a mapping.")
 
     for attribute in copy.copy(node):
         if attribute not in overwritten_attributes:
