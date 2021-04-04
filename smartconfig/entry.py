@@ -1,5 +1,5 @@
 from itertools import chain
-from typing import Any, Dict, NoReturn, Optional, Tuple
+from typing import Any, Dict, MutableMapping, NoReturn, Optional, Tuple
 
 from smartconfig import _registry
 from smartconfig._registry import get_attribute, unload_defaults, used_paths
@@ -56,6 +56,9 @@ class _ConfigEntryMeta(type):
 
         for node_name in cls.__path.split("."):
             current_node = current_node.setdefault(node_name, {})
+
+        if not isinstance(current_node, MutableMapping):
+            raise ConfigurationError(f"Node at path {cls.__path!r} isn't a mapping.")
 
         for key, value in configuration.items():
             # We only write values that aren't already defined.

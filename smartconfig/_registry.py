@@ -11,11 +11,10 @@ Attributes:
 import copy
 from typing import Any, Dict, Hashable, Mapping, MutableMapping, Set
 
-import smartconfig
 from .exceptions import ConfigurationError, ConfigurationKeyError
 
 global_configuration: Dict[Hashable, Any] = {}
-used_paths: Set["smartconfig.ConfigEntry"] = set()
+used_paths: Set[str] = set()
 overwritten_attributes: Set[str] = set()
 mapping_cache: Dict[str, Mapping] = {}
 
@@ -66,7 +65,7 @@ def unload_defaults(path: str) -> None:
         raise ConfigurationError(f"Node at path {path!r} isn't a mapping.")
 
     for attribute in copy.copy(node):
-        if attribute not in overwritten_attributes:
+        if f"{path}.{attribute}" not in overwritten_attributes:
             node.pop(attribute)
 
 

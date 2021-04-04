@@ -1,13 +1,19 @@
 from os import PathLike
-from typing import Mapping, MutableMapping, Union
+from typing import Mapping, MutableMapping, Set, Union
 
 import yaml
 
-from smartconfig import _registry
+from smartconfig import ConfigurationError, _registry
+from smartconfig._registry import used_paths
 from smartconfig.constructors import _ref_constructor
 
 
-def _update_mapping(source: Mapping, dest: MutableMapping, path: str = "") -> MutableMapping:
+def _update_mapping(
+        source: Mapping,
+        dest: MutableMapping,
+        path: str = "",
+        node_paths: Set[str] = set()  # noqa: B006, this is safe since we don't mutate it
+) -> MutableMapping:
     """
     Recursively update the `dest` mapping with values from `source`.
 
@@ -26,19 +32,31 @@ def _update_mapping(source: Mapping, dest: MutableMapping, path: str = "") -> Mu
         source: The mapping with the new values.
         dest: The mapping to update.
         path: The dot-delimited path to `dest`.
+        node_paths: Set of paths to ensure that no non-mapping node is set to.
 
     Returns:
         The updated dest mapping.
+
+    Raises:
+        ConfigurationError: Tried to set a non-mapping attribute on a path in `node_paths`.
     """
     for key, value in source.items():
+        if path:
+            new_path = f"{path}.{key}"
+        else:
+            new_path = key
+
         if '.' in key:
             key, child_node = key.split('.', maxsplit=1)
-            dest[key] = _update_mapping({child_node: value}, dest.get(key, {}), path + key)
+            dest[key] = _update_mapping({child_node: value}, dest.get(key, {}), f"{path}.{key}", node_paths)
 
         elif isinstance(value, Mapping):
-            dest[key] = _update_mapping(value, dest.get(key, {}), path + key)
+            dest[key] = _update_mapping(value, dest.get(key, {}), new_path, node_paths)
         else:
-            _registry.overwritten_attributes.add(path + key)
+            if new_path in node_paths:
+                raise ConfigurationError(f"Node at path {new_path!r} must be a mapping.")
+
+            _registry.overwritten_attributes.add(new_path)
             dest[key] = value
 
     return dest
@@ -102,7 +120,11 @@ def load(path: Union[str, bytes, PathLike]) -> None:
         yaml_content = yaml.full_load(file)
 
     if isinstance(yaml_content, Mapping):
-        _registry.global_configuration = _update_mapping(yaml_content, _registry.global_configuration)
+        _registry.global_configuration = _update_mapping(
+            yaml_content,
+            _registry.global_configuration,
+            node_paths=used_paths
+        )
 
 
 yaml.FullLoader.add_constructor("!REF", _ref_constructor)
