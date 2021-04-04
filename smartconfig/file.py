@@ -77,6 +77,19 @@ def load(path: Union[str, bytes, PathLike]) -> None:
     a `ConfigEntry`. There could be nodes that are simply not used at all. It's even valid for the root to not be a
     mapping node. Such file would effectively configure nothing, but loading it is still supported.
 
+    A special !REF construct can be used to point to another attribute. For instance,
+
+    module_1:
+      class:
+        attribute_1: value
+
+    module_2:
+      class:
+        reference: !REF module_1.class.attribute_1
+
+    module_2.class.reference will have the same value as module_1.class.attribute_1 even if it is later overwrote by
+    a configuration file.
+
     Args:
         path: The path to the configuration file.
 
