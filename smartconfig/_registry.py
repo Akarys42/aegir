@@ -20,7 +20,7 @@ overwritten_attributes: Set[str] = set()
 mapping_cache: Dict[str, Mapping] = {}
 
 
-def _get_child_node(node_name: str, root: Any):
+def _get_child_node(node_name: str, root: Any) -> Any:
     """
     Retrieve the value of the node `node_name` which is a child of the `root` node.
 

@@ -2,8 +2,8 @@ from typing import Any
 
 import yaml
 
-from smartconfig.exceptions import InvalidOperation
 from smartconfig._registry import get_attribute, get_node
+from smartconfig.exceptions import InvalidOperation
 
 _used_constructors = set()
 

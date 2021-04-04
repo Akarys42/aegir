@@ -1,6 +1,7 @@
-import yaml
 from os import PathLike
 from typing import Mapping, MutableMapping, Union
+
+import yaml
 
 from smartconfig import _registry
 from smartconfig.constructors import _ref_constructor

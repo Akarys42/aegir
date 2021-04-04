@@ -2,7 +2,7 @@ from itertools import chain
 from typing import Any, Dict, NoReturn, Optional, Tuple
 
 from smartconfig import _registry
-from smartconfig._registry import global_configuration, get_attribute, used_paths, unload_defaults
+from smartconfig._registry import get_attribute, unload_defaults, used_paths
 from smartconfig.exceptions import ConfigurationError, ConfigurationKeyError, InvalidOperation, PathConflict
 
 
