@@ -1,11 +1,15 @@
 from os import PathLike
-from typing import Mapping, MutableMapping, Set, Union
+from typing import Mapping, MutableMapping, Set, Type, Union
 
 import yaml
 
 from smartconfig import ConfigurationError, _registry
 from smartconfig._registry import used_paths
 from smartconfig.constructors import _ref_constructor, _unchecked_constructors
+
+
+class SmartconfigYamlFullLoader(yaml.FullLoader):
+    """Independent Yaml loader to add constructors on it."""
 
 
 def _update_mapping(
@@ -62,7 +66,7 @@ def _update_mapping(
     return dest
 
 
-def load(path: Union[str, bytes, PathLike]) -> None:
+def load(path: Union[str, bytes, PathLike], *, yaml_loader: Type[yaml.Loader] = SmartconfigYamlFullLoader) -> None:
     """
     Read a YAML file at `path` and update the configuration with its values.
 
@@ -110,6 +114,7 @@ def load(path: Union[str, bytes, PathLike]) -> None:
 
     Args:
         path: The path to the configuration file.
+        yaml_loader: The YAML loader to use. Default to a full loader with the !REF constructor added.
 
     Raises:
         FileNotFoundError: The configuration file doesn't exist.
@@ -118,7 +123,7 @@ def load(path: Union[str, bytes, PathLike]) -> None:
         InvalidOperation: A !REF constructor contains a circular reference.
     """
     with open(path) as file:
-        yaml_content = yaml.full_load(file)
+        yaml_content = yaml.load(file, Loader=yaml_loader)
 
     if isinstance(yaml_content, Mapping):
         _registry.global_configuration = _update_mapping(
@@ -132,4 +137,4 @@ def load(path: Union[str, bytes, PathLike]) -> None:
         _unchecked_constructors.pop().check_circular_reference()
 
 
-yaml.FullLoader.add_constructor("!REF", _ref_constructor)
+SmartconfigYamlFullLoader.add_constructor("!REF", _ref_constructor)
