@@ -114,6 +114,7 @@ class ConfigEntry(metaclass=_ConfigEntryMeta):
     Class attributes of the subclasses can be overwritten using YAML configuration files.
     The entry will use its default values and potentially directly override them with already loaded configurations,
     and will also be overwritten in the future by newly loaded configurations.
+    Attributes starting by an underscore (_) will be looked up through a normal class attribute lookup.
 
     The default path used by an entry is the name of the module it is defined in, or the `path` metaclass argument.
     """
