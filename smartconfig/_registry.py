@@ -19,13 +19,14 @@ overwritten_attributes: Set[str] = set()
 mapping_cache: Dict[str, Mapping] = {}
 
 
-def _get_child_node(node_name: str, root: Any) -> Any:
+def _get_child_node(node_name: str, root: Any, follow_descriptors: bool = True) -> Any:
     """
     Retrieve the value of the node `node_name` which is a child of the `root` node.
 
     Args:
         node_name: The name of the child node to retrieve.
         root: The parent node of the node to retrieve.
+        follow_descriptors: Should the lookup follow descriptors.
 
     Returns:
         The value of the child node.
@@ -43,7 +44,7 @@ def _get_child_node(node_name: str, root: Any) -> Any:
     node = root[node_name]
 
     # Use __get__ if the node is a descriptor.
-    if hasattr(node, '__get__'):
+    if hasattr(node, '__get__') and follow_descriptors:
         node = node.__get__()
 
     return node
@@ -69,7 +70,7 @@ def unload_defaults(path: str) -> None:
             node.pop(attribute)
 
 
-def get_node(path: str) -> Any:
+def get_node(path: str, follow_descriptors: bool = True) -> Any:
     """
     Retrieve the value of the node located at `path` from the global configuration.
 
@@ -77,6 +78,7 @@ def get_node(path: str) -> Any:
 
     Args:
          path: The dot-delimited path to the node.
+        follow_descriptors: Should the lookup follow descriptors.
 
     Returns:
         The node at the requested path.
@@ -91,7 +93,7 @@ def get_node(path: str) -> Any:
     node = global_configuration
 
     for node_name in path.split('.'):
-        node = _get_child_node(node_name, node)
+        node = _get_child_node(node_name, node, follow_descriptors)
 
     # Only cache mapping nodes.
     if isinstance(node, Mapping):
@@ -100,13 +102,14 @@ def get_node(path: str) -> Any:
     return node
 
 
-def get_attribute(path: str, attribute: str) -> Any:
+def get_attribute(path: str, attribute: str, follow_descriptors: bool = True) -> Any:
     """
     Retrieve the value of the `attribute` under `path` from the global configuration.
 
     Args:
         path: The dot-delimited path to the parent of the attribute to retrieve.
         attribute: The name of the attribute to find
+        follow_descriptors: Should the lookup follow descriptors.
 
     Returns:
         The value of the attribute.
@@ -116,4 +119,4 @@ def get_attribute(path: str, attribute: str) -> Any:
         ConfigurationKeyError: The path or the attribute doesn't exist.
     """
     parent = get_node(path)
-    return _get_child_node(attribute, parent)
+    return _get_child_node(attribute, parent, follow_descriptors)

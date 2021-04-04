@@ -5,7 +5,7 @@ import yaml
 
 from smartconfig import ConfigurationError, _registry
 from smartconfig._registry import used_paths
-from smartconfig.constructors import _ref_constructor
+from smartconfig.constructors import _ref_constructor, _unchecked_constructors
 
 
 def _update_mapping(
@@ -125,6 +125,10 @@ def load(path: Union[str, bytes, PathLike]) -> None:
             _registry.global_configuration,
             node_paths=used_paths
         )
+
+    # Check constructors for circular references
+    while _unchecked_constructors:
+        _unchecked_constructors.pop().check_circular_reference()
 
 
 yaml.FullLoader.add_constructor("!REF", _ref_constructor)

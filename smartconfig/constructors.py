@@ -1,11 +1,12 @@
-from typing import Any, NoReturn
+from typing import Any, Dict, List, NoReturn
 
 import yaml
 
 from smartconfig._registry import get_attribute, get_node
-from smartconfig.exceptions import InvalidOperation
+from smartconfig.exceptions import ConfigurationError, ConfigurationKeyError, InvalidOperation
 
-_used_constructors = set()
+_constructor_mapping: Dict["AttributeReference", Any] = {}
+_unchecked_constructors: List["AttributeReference"] = []
 
 
 class AttributeReference:
@@ -17,10 +18,6 @@ class AttributeReference:
     """
 
     def __init__(self, path: str) -> None:
-        if path in _used_constructors:
-            raise InvalidOperation("Cannot point a REF constructor to another one.")
-        _used_constructors.add(path)
-
         self.full_path = path
 
         if '.' in path:
@@ -29,11 +26,31 @@ class AttributeReference:
             self.path = path
             self.attribute = None
 
-    def __get__(self, *_) -> Any:
+    def check_circular_reference(self) -> None:
+        """Raises InvalidOperation if a circular reference is detected."""
+        visited_references = set()
+        current_constructor = self
+
+        while hasattr(current_constructor, "__get__"):
+            if current_constructor in visited_references:
+                raise InvalidOperation(f"Circular referencing starting from !REF {self.full_path} detected.")
+            visited_references.add(current_constructor)
+
+            # We only pass follow_descriptors if we are sure that it will be accepted by the callee.
+            if isinstance(current_constructor, AttributeReference):
+                try:
+                    current_constructor = current_constructor.__get__(follow_descriptors=False)
+                except (ConfigurationError, ConfigurationKeyError):
+                    # We reached the end of chain
+                    break
+            else:
+                current_constructor = current_constructor.__get__()
+
+    def __get__(self, *_, follow_descriptors: bool = True) -> Any:
         if self.attribute is not None:
-            return get_attribute(self.path, self.attribute)
+            return get_attribute(self.path, self.attribute, follow_descriptors)
         else:
-            return get_node(self.path)
+            return get_node(self.path, follow_descriptors)
 
     def __set__(self, *_) -> NoReturn:
         raise NotImplementedError("Setting values of REF constructors isn't allowed.")
@@ -44,4 +61,6 @@ class AttributeReference:
 
 def _ref_constructor(loader: yaml.SafeLoader, node: yaml.Node) -> AttributeReference:
     """Return a descriptor which references another node."""
-    return AttributeReference(node.value)
+    ref = AttributeReference(node.value)
+    _unchecked_constructors.append(ref)
+    return ref
