@@ -95,6 +95,7 @@ class _ConfigEntryMeta(type):
     def __del__(cls) -> None:
         """Cleanup the defaults from the global configuration."""
         unload_defaults(cls.__path)
+        used_paths.remove(cls.__path)
 
     def __repr__(cls) -> str:
         """Return a short representation of the entry."""
