@@ -77,7 +77,7 @@ def get_node(path: str, follow_descriptors: bool = True) -> Any:
     Cache the node if it's a mapping. If the path is cached, retrieve the node from the cache.
 
     Args:
-         path: The dot-delimited path to the node.
+        path: The dot-delimited path to the node.
         follow_descriptors: Should the lookup follow descriptors.
 
     Returns:
