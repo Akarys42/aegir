@@ -9,7 +9,7 @@ from smartconfig.constructors import _ref_constructor, _unchecked_constructors
 
 
 class SmartconfigYamlFullLoader(yaml.FullLoader):
-    """Independent Yaml loader to add constructors on it."""
+    """Independent YAML loader to add constructors on it."""
 
 
 def _update_mapping(
