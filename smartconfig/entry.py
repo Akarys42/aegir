@@ -57,8 +57,8 @@ class _ConfigEntryMeta(type):
         for node_name in cls.__path.split("."):
             current_node = current_node.setdefault(node_name, {})
 
-        if not isinstance(current_node, MutableMapping):
-            raise ConfigurationError(f"Node at path {cls.__path!r} isn't a mapping.")
+            if not isinstance(current_node, MutableMapping):
+                raise ConfigurationError(f"Node at path {cls.__path!r} isn't a mapping.")
 
         for key, value in configuration.items():
             # We only write values that aren't already defined.
