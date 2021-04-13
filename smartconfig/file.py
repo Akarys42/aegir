@@ -1,5 +1,5 @@
 from os import PathLike
-from typing import Mapping, MutableMapping, Set, Type, Union
+from typing import Mapping, MutableMapping, Optional, Set, Type, Union
 
 import yaml
 
@@ -66,7 +66,11 @@ def _update_mapping(
     return dest
 
 
-def load(path: Union[str, bytes, PathLike], *, yaml_loader: Type[yaml.Loader] = SmartconfigYamlFullLoader) -> None:
+def load(
+        path: Union[str, bytes, PathLike],
+        encoding: Optional[str] = None,
+        yaml_loader: Type[yaml.Loader] = SmartconfigYamlFullLoader
+) -> None:
     """
     Read a YAML file at `path` and update the configuration with its values.
 
@@ -114,6 +118,8 @@ def load(path: Union[str, bytes, PathLike], *, yaml_loader: Type[yaml.Loader] = 
 
     Args:
         path: The path to the configuration file.
+        encoding: The encoding with which to open the file. Same as the `encoding` parameter of the `open()` built-in.
+            PyYAML only supports utf-16-le, utf-16-be, and utf-8. utf-8 is assumed if the former two are not detected.
         yaml_loader: The YAML loader to use. Default to a full loader with the !REF constructor added.
 
     Raises:
@@ -122,7 +128,7 @@ def load(path: Union[str, bytes, PathLike], *, yaml_loader: Type[yaml.Loader] = 
         yaml.YAMLError: PyYAML failed to load the YAML.
         InvalidOperation: A !REF constructor contains a circular reference.
     """
-    with open(path) as file:
+    with open(path, encoding=encoding) as file:
         yaml_content = yaml.load(file, Loader=yaml_loader)
 
     if isinstance(yaml_content, Mapping):
