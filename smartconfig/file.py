@@ -1,5 +1,5 @@
 from os import PathLike
-from typing import Mapping, MutableMapping, Optional, Set, Type, Union
+from typing import AnyStr, IO, Mapping, MutableMapping, Optional, Set, Type, Union
 
 import yaml
 
@@ -67,7 +67,7 @@ def _update_mapping(
 
 
 def load(
-        path: Union[str, bytes, PathLike],
+        path: Union[AnyStr, PathLike],
         encoding: Optional[str] = None,
         yaml_loader: Type[yaml.Loader] = SmartconfigYamlFullLoader
 ) -> None:
@@ -124,12 +124,31 @@ def load(
 
     Raises:
         FileNotFoundError: The configuration file doesn't exist.
-        IOError: An error occurred when reading the file.
+        IOError: An error occurred while reading the file.
         yaml.YAMLError: PyYAML failed to load the YAML.
         InvalidOperation: A !REF constructor contains a circular reference.
     """
     with open(path, encoding=encoding) as file:
-        yaml_content = yaml.load(file, Loader=yaml_loader)
+        load_stream(file, yaml_loader)
+
+
+def load_stream(stream: Union[AnyStr, IO[AnyStr]], yaml_loader: Type[yaml.Loader] = SmartconfigYamlFullLoader) -> None:
+    """
+    Read a YAML config from `stream` and update the configuration with its values.
+
+    See the documentation of `smartconfig.load()`.
+
+    Args:
+        stream: The content of the YAML config to load.
+            Must be a `str`, Unicode-encoded `bytes`, or readable file-like object which yields one of the former.
+        yaml_loader: The YAML loader to use. Default to a full loader with the !REF constructor added.
+
+    Raises:
+        IOError: An error occurred while reading the stream.
+        yaml.YAMLError: PyYAML failed to load the YAML.
+        InvalidOperation: A !REF constructor contains a circular reference.
+    """
+    yaml_content = yaml.load(stream, Loader=yaml_loader)
 
     if isinstance(yaml_content, Mapping):
         _registry.global_configuration = _update_mapping(
