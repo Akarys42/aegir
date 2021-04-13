@@ -103,7 +103,7 @@ def load(
     a `ConfigEntry`. There could be nodes that are simply not used at all. It's even valid for the root to not be a
     mapping node. Such file would effectively configure nothing, but loading it is still supported.
 
-    A special !REF construct can be used to point to another attribute. For instance,
+    A !REF constructor can be used to reference another attribute of a `ConfigEntry`. For example,
 
     module_1:
       class:
@@ -111,10 +111,10 @@ def load(
 
     module_2:
       class:
-        reference: !REF module_1.class.attribute_1
+        attribute_2: !REF module_1.class.attribute_1
 
-    module_2.class.reference will have the same value as module_1.class.attribute_1 even if it is later overwrote by
-    a configuration file.
+    would make `attribute_2` have the same value as `attribute_1`. As described above, the value of `attribute_1`
+    follows the same behaviour expected for any other attribute.
 
     Args:
         path: The path to the configuration file.
