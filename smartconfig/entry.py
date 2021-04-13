@@ -8,7 +8,9 @@ from smartconfig.exceptions import ConfigurationError, ConfigurationKeyError, In
 
 class _ConfigEntryMeta(type):
     """
-    Metaclass used to define special ConfigEntry behaviors.
+    Metaclass used to define special ConfigEntry behaviour.
+
+    See the documentation of `ConfigEntry`.
 
     Note: Using this metaclass outside of the library is currently not supported.
     """
@@ -17,27 +19,23 @@ class _ConfigEntryMeta(type):
         """
         Look up the attribute through the configuration system.
 
-        If the attribute name starts with `_`, normal lookup is done, otherwise _registry.global_configuration is used.
+        If the attribute's name starts with `_`, use the default Python behaviour for attribute lookup.
+        Otherwise, retrieve the value from the loaded configurations or the default value.
 
         Args:
-            name: Attribute to lookup
+            name: Name of the attribute to retrieve.
 
         Raises:
+            ConfigurationError: A node along the path is not a mapping node.
             ConfigurationKeyError: The attribute doesn't exist.
         """
-        # Use the normal lookup for attribute starting with `_`
         if name.startswith('_'):
             return super().__getattribute__(name)
 
         return get_attribute(cls.__path, name)
 
     def __new__(cls, name: str, bases: Tuple[type, ...], dict_: Dict[str, Any], path: Optional[str] = None) -> type:
-        """
-        Add the `__defined_attributes` and `__path_override` attributes to the new entry.
-
-        Args:
-            path: Custom path used for this entry instead of the module name.
-        """
+        """Create and return new instance (a class) of this type with a `__path_override` class attribute."""
         dict_[f"{cls.__name__}__path_override"] = path
 
         return super().__new__(cls, name, bases, dict_)
@@ -61,7 +59,7 @@ class _ConfigEntryMeta(type):
                 raise ConfigurationError(f"Node at path {cls.__path!r} isn't a mapping.")
 
         for key, value in configuration.items():
-            # We only write values that aren't already defined.
+            # Only write values that aren't already defined.
             if key not in current_node:
                 current_node[key] = value
 
@@ -80,20 +78,14 @@ class _ConfigEntryMeta(type):
                 raise ConfigurationKeyError(f"Attribute {attribute!r} doesn't have a defined value.") from None
 
     def __init__(cls, name: str, bases: Tuple[type, ...], dict_: Dict[str, Any], path: Optional[str] = None):
-        """
-        Initialize the new entry.
-
-        Raises:
-            PathConflict: An entry is already registered for this path. Use the `path` metaclass argument.
-            ConfigurationKeyError: An attribute doesn't have a defined value.
-        """
+        """Initialise the new entry."""
         super().__init__(name, bases, dict_)
 
         cls._register_entry()
         cls._check_undefined_entries()
 
     def __del__(cls) -> None:
-        """Cleanup the defaults from the global configuration."""
+        """Remove the default values from the global configuration and free the entry's path."""
         unload_defaults(cls.__path)
         used_paths.remove(cls.__path)
 
@@ -105,7 +97,7 @@ class _ConfigEntryMeta(type):
             return f"<_ConfigEntryMeta {cls.__name__}>"
 
     def __eq__(cls, other: Any) -> bool:
-        """Return true if this entry and the other point to the same path."""
+        """Return True if this entry and the other point to the same path."""
         if not isinstance(other, _ConfigEntryMeta):
             return NotImplemented
         return cls.__path == other.__path
@@ -113,16 +105,25 @@ class _ConfigEntryMeta(type):
 
 class ConfigEntry(metaclass=_ConfigEntryMeta):
     """
-    Base class for new configuration entries.
+    Base class for configuration entries.
 
-    Class attributes of the subclasses can be overwritten using YAML configuration files.
-    The entry will use its default values and potentially directly override them with already loaded configurations,
-    and will also be overwritten in the future by newly loaded configurations.
-    Attributes starting by an underscore (_) will be looked up through a normal class attribute lookup.
+    Values of class attributes can be overwritten by loading YAML configuration files. Otherwise, their given default
+    values will be used. The exception is class attributes whose names begin with an underscore; they always behave like
+    normal class attributes and therefore their values cannot be overwritten by config files.
 
-    The default path used by an entry is the name of the module it is defined in, or the `path` metaclass argument.
+    Supports equality comparison based on the value of `path`.
+
+    Metaclass Args:
+        path: Path to use for attribute lookup in the config.
+            Default to the containing module's fully-qualified name when the value is None or an empty string.
+
+    Raises:
+        PathConflict: An entry is already registered at `path`.
+        ConfigurationError: A node along `path` is not a mapping node.
+        ConfigurationKeyError: A class attribute doesn't have a defined value.
+        InvalidOperation: This class or a subclass of it is instantiated.
     """
 
     def __init__(self) -> NoReturn:
-        """Raises `InvalidOperation` as creating instances isn't allowed."""
+        """Raise `InvalidOperation` because creating instances isn't allowed."""
         raise InvalidOperation("Creating instances of ConfigEntry isn't allowed.")
