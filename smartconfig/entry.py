@@ -41,15 +41,7 @@ class _ConfigEntryMeta(type):
         return super().__new__(cls, name, bases, dict_)
 
     def _register_entry(cls) -> None:
-        """Set the `__path` attribute and register the entry."""
-        cls.__path = cls.__path_override or cls.__module__
-        if cls.__path in _registry.used_paths:
-            raise PathConflict(f"An entry at {cls.__path!r} already exists.")  # TODO: Add an FAQ link.
-
-        configuration = {
-            key: value for key, value in cls.__dict__.items() if not key.startswith('_')
-        }
-
+        """Register the entry's path and store its default values in the global configuration."""
         current_node = _registry.global_configuration
 
         for node_name in cls.__path.split("."):
@@ -58,28 +50,29 @@ class _ConfigEntryMeta(type):
             if not isinstance(current_node, MutableMapping):
                 raise ConfigurationError(f"Node at path {cls.__path!r} isn't a mapping.")
 
-        for key, value in configuration.items():
-            # Only write values that aren't already defined.
-            if key not in current_node:
+        for key, value in cls.__dict__.items():
+            # Ignore "private" attributes and only write values that aren't already defined.
+            if not key.startswith('_') and key not in current_node:
                 current_node[key] = value
 
         used_paths.add(cls.__path)
 
     def _check_undefined_entries(cls) -> None:
         """Raise `ConfigurationKeyError` if any attribute doesn't have a defined value."""
-        defined_attributes = [
-            name for name in chain(cls.__dict__.keys(), getattr(cls, "__annotations__", ())) if not name.startswith('_')
-        ]
-
-        for attribute in defined_attributes:
-            try:
-                get_attribute(cls.__path, attribute)
-            except (ConfigurationError, ConfigurationKeyError):
-                raise ConfigurationKeyError(f"Attribute {attribute!r} doesn't have a defined value.") from None
+        for attribute in chain(cls.__dict__.keys(), getattr(cls, "__annotations__", ())):
+            if not attribute.startswith('_'):
+                try:
+                    get_attribute(cls.__path, attribute)
+                except (ConfigurationError, ConfigurationKeyError):
+                    raise ConfigurationKeyError(f"Attribute {attribute!r} doesn't have a defined value.") from None
 
     def __init__(cls, name: str, bases: Tuple[type, ...], dict_: Dict[str, Any], path: Optional[str] = None):
         """Initialise the new entry."""
         super().__init__(name, bases, dict_)
+
+        cls.__path = cls.__path_override or cls.__module__
+        if cls.__path in _registry.used_paths:
+            raise PathConflict(f"An entry at {cls.__path!r} already exists.")
 
         cls._register_entry()
         cls._check_undefined_entries()
