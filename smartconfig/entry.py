@@ -15,7 +15,7 @@ class _ConfigEntryMeta(type):
     Note: Using this metaclass outside of the library is currently not supported.
     """
 
-    def __getattribute__(cls, name: str) -> Optional[Any]:
+    def __getattribute__(cls, name: str) -> Any:
         """
         Look up the attribute through the configuration system.
 
