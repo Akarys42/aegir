@@ -56,14 +56,14 @@ def unload_defaults(path: str) -> None:
 
     Args:
         path: The dot-delimited path to the parent node.
-    """
-    try:
-        node = get_node(path)
-    except (ConfigurationError, ConfigurationKeyError):
-        return
 
+    Raises:
+        ConfigurationError: A node along the path is not a mapping node or the final node isn't a mutable mapping.
+        ConfigurationKeyError: The path does not exist.
+    """
+    node = get_node(path)
     if not isinstance(node, MutableMapping):
-        raise ConfigurationError(f"Node at path {path!r} isn't a mapping.")
+        raise ConfigurationError(f"Node at path {path!r} isn't a mutable mapping.")
 
     for attribute in copy.copy(node):
         if f"{path}.{attribute}" not in overwritten_attributes:

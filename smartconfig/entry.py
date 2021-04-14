@@ -73,7 +73,14 @@ class _ConfigEntryMeta(type):
 
     def __del__(cls) -> None:
         """Remove the default values from the global configuration and free the entry's path."""
-        unload_defaults(cls.__path)
+        try:
+            unload_defaults(cls.__path)
+        except (ConfigurationError, ConfigurationKeyError):
+            # Fail silently because the same error may have already been raised while the object was being initialised.
+            # There's no way to distinguish such case from the state being modified after successful initialisation.
+            # Besides, there's nothing that can be done for cleanup if the node can't be retrieved.
+            return
+
         used_paths.remove(cls.__path)
 
     def __repr__(cls) -> str:
