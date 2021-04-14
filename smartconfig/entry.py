@@ -90,12 +90,6 @@ class _ConfigEntryMeta(type):
         else:
             return f"<ConfigEntry {cls.__qualname__!r} at {cls.__path!r}>"
 
-    def __eq__(cls, other: Any) -> bool:
-        """Return True if this entry and the other point to the same path."""
-        if not isinstance(other, _ConfigEntryMeta):
-            return NotImplemented
-        return cls.__path == other.__path
-
 
 class ConfigEntry(metaclass=_ConfigEntryMeta):
     """
