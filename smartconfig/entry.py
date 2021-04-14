@@ -34,11 +34,9 @@ class _ConfigEntryMeta(type):
 
         return get_attribute(cls.__path, name)
 
-    def __new__(cls, name: str, bases: Tuple[type, ...], dict_: Dict[str, Any], path: Optional[str] = None) -> type:
-        """Create and return new instance (a class) of this type with a `__path_override` class attribute."""
-        dict_[f"{cls.__name__}__path_override"] = path
-
-        return super().__new__(cls, name, bases, dict_)
+    def __new__(mcs, name: str, bases: Tuple[type, ...], dict_: Dict[str, Any], path: Optional[str] = None) -> type:
+        """Create and return new instance (a class) of this type."""
+        return super().__new__(mcs, name, bases, dict_)
 
     def _register_entry(cls) -> None:
         """Register the entry's path and store its default values in the global configuration."""
@@ -70,7 +68,7 @@ class _ConfigEntryMeta(type):
         """Initialise the new entry."""
         super().__init__(name, bases, dict_)
 
-        cls.__path = cls.__path_override or cls.__module__
+        cls.__path = path or cls.__module__
         if cls.__path in _registry.used_paths:
             raise PathConflict(f"An entry at {cls.__path!r} already exists.")
 
