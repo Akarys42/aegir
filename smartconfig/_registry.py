@@ -26,7 +26,7 @@ def _get_child_node(node_name: str, root: Any, follow_descriptors: bool = True) 
     Args:
         node_name: The name of the child node to retrieve.
         root: The parent node of the node to retrieve.
-        follow_descriptors: Should the lookup follow descriptors.
+        follow_descriptors: True if values should be retrieved through descriptors when encountered.
 
     Returns:
         The value of the child node.
@@ -78,7 +78,7 @@ def get_node(path: str, follow_descriptors: bool = True, *, create: bool = False
 
     Args:
         path: The dot-delimited path to the node.
-        follow_descriptors: Should the lookup follow descriptors.
+        follow_descriptors: True if values should be retrieved through descriptors when encountered.
         create: True if non-existing nodes along the path should be created.
 
     Returns:
@@ -116,8 +116,8 @@ def get_attribute(path: str, attribute: str, follow_descriptors: bool = True) ->
 
     Args:
         path: The dot-delimited path to the parent of the attribute to retrieve.
-        attribute: The name of the attribute to find
-        follow_descriptors: Should the lookup follow descriptors.
+        attribute: The name of the attribute to retrieve.
+        follow_descriptors: True if values should be retrieved through descriptors when encountered.
 
     Returns:
         The value of the attribute.
