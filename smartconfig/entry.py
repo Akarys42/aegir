@@ -98,8 +98,6 @@ class ConfigEntry(metaclass=_ConfigEntryMeta):
     values will be used. The exception is class attributes whose names begin with an underscore; they always behave like
     normal class attributes and therefore their values cannot be overwritten by config files.
 
-    Supports equality comparison based on the value of `path`.
-
     Metaclass Args:
         path: Path to use for attribute lookup in the config.
             Default to the containing module's fully-qualified name when the value is None or an empty string.
