@@ -70,7 +70,7 @@ def unload_defaults(path: str) -> None:
             node.pop(attribute)
 
 
-def get_node(path: str, follow_descriptors: bool = True) -> Any:
+def get_node(path: str, follow_descriptors: bool = True, *, create: bool = False) -> Any:
     """
     Retrieve the value of the node located at `path` from the global configuration.
 
@@ -79,13 +79,14 @@ def get_node(path: str, follow_descriptors: bool = True) -> Any:
     Args:
         path: The dot-delimited path to the node.
         follow_descriptors: Should the lookup follow descriptors.
+        create: True if non-existing nodes along the path should be created.
 
     Returns:
         The node at the requested path.
 
     Raises:
-        ConfigurationError: A node along the path is not a mapping node.
-        ConfigurationKeyError: The path does not exist.
+        ConfigurationError: A node along the path (excluding the final node) is not a mapping node.
+        ConfigurationKeyError: The path does not exist and `create` is False.
     """
     if path in mapping_cache:
         return mapping_cache[path]
@@ -93,7 +94,14 @@ def get_node(path: str, follow_descriptors: bool = True) -> Any:
     node = global_configuration
 
     for node_name in path.split('.'):
-        node = _get_child_node(node_name, node, follow_descriptors)
+        try:
+            node = _get_child_node(node_name, node, follow_descriptors)
+        except ConfigurationKeyError:
+            if create:
+                node[node_name] = {}
+                node = node[node_name]
+            else:
+                raise
 
     # Only cache mapping nodes.
     if isinstance(node, Mapping):

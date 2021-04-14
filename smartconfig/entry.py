@@ -40,18 +40,14 @@ class _ConfigEntryMeta(type):
 
     def _register_entry(cls) -> None:
         """Register the entry's path and store its default values in the global configuration."""
-        current_node = _registry.global_configuration
-
-        for node_name in cls.__path.split("."):
-            current_node = current_node.setdefault(node_name, {})
-
-            if not isinstance(current_node, MutableMapping):
-                raise ConfigurationError(f"Node at path {cls.__path!r} isn't a mapping.")
+        node = _registry.get_node(cls.__path, create=True)
+        if not isinstance(node, MutableMapping):
+            raise ConfigurationError(f"Node at path {cls.__path!r} isn't a mutable mapping.")
 
         for key, value in cls.__dict__.items():
             # Ignore "private" attributes and only write values that aren't already defined.
-            if not key.startswith('_') and key not in current_node:
-                current_node[key] = value
+            if not key.startswith('_') and key not in node:
+                node[key] = value
 
         used_paths.add(cls.__path)
 
