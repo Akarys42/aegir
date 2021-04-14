@@ -27,13 +27,13 @@ class AttributeReference:
             self.attribute = None
 
     def check_circular_reference(self) -> None:
-        """Raise InvalidOperation if a circular reference is detected."""
+        """Raise ConfigurationError if a circular reference is detected."""
         visited_references = set()
         current_constructor = self
 
         while hasattr(current_constructor, "__get__"):
             if current_constructor in visited_references:
-                raise InvalidOperation(f"Circular reference starting at !REF {self.full_path}.")
+                raise ConfigurationError(f"Circular reference starting at !REF {self.full_path}.")
             visited_references.add(current_constructor)
 
             # Only pass follow_descriptors for AttributeReference since it's a custom argument.

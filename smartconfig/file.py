@@ -126,7 +126,7 @@ def load(
         FileNotFoundError: The configuration file doesn't exist.
         IOError: An error occurred while reading the file.
         yaml.YAMLError: PyYAML failed to load the YAML.
-        InvalidOperation: A !REF constructor contains a circular reference.
+        ConfigurationError: A !REF constructor contains a circular reference.
     """
     with open(path, encoding=encoding) as file:
         load_stream(file, yaml_loader)
@@ -146,7 +146,7 @@ def load_stream(stream: Union[AnyStr, IO[AnyStr]], yaml_loader: Type[yaml.Loader
     Raises:
         IOError: An error occurred while reading the stream.
         yaml.YAMLError: PyYAML failed to load the YAML.
-        InvalidOperation: A !REF constructor contains a circular reference.
+        ConfigurationError: A !REF constructor contains a circular reference.
     """
     yaml_content = yaml.load(stream, Loader=yaml_loader)
 
