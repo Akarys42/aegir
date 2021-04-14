@@ -1,5 +1,5 @@
 class SmartconfigException(Exception):
-    """Base exception of `smartconfig` library."""
+    """Base exception of the `smartconfig` library."""
     pass
 
 
@@ -7,7 +7,7 @@ class PathConflict(ValueError, SmartconfigException):
     """
     Two configuration entries point to the same path.
 
-    Provide a `path` argument to the metaclass to bypass this restriction.
+    Specify a different path through the `path` argument of the metaclass.
     """
     pass
 
