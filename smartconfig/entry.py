@@ -82,10 +82,10 @@ class _ConfigEntryMeta(type):
 
     def __repr__(cls) -> str:
         """Return a short representation of the entry."""
-        if hasattr(cls, '__path'):
-            return f"<_ConfigEntryMeta {cls.__name__} at {cls.__path!r}>"
+        if cls is ConfigEntry:
+            return super().__repr__()
         else:
-            return f"<_ConfigEntryMeta {cls.__name__}>"
+            return f"<ConfigEntry {cls.__qualname__!r} at {cls.__path!r}>"
 
     def __eq__(cls, other: Any) -> bool:
         """Return True if this entry and the other point to the same path."""
