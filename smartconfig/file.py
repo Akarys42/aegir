@@ -55,6 +55,7 @@ def _update_mapping(
             dest[key] = _update_mapping({child_node: value}, dest.get(key, {}), f"{path}.{key}", node_paths)
 
         elif isinstance(value, Mapping):
+            _registry.overwritten_attributes.add(new_path)
             dest[key] = _update_mapping(value, dest.get(key, {}), new_path, node_paths)
         else:
             if new_path in node_paths:

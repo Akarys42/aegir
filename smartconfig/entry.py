@@ -1,3 +1,4 @@
+import contextlib
 from itertools import chain
 from typing import Any, Dict, List, MutableMapping, NoReturn, Optional, Tuple
 
@@ -114,7 +115,9 @@ class _ConfigEntryMeta(type):
             # Besides, there's nothing that can be done for cleanup if the node can't be retrieved.
             return
 
-        used_paths.remove(cls.__path)
+        # If the node has already been cleaned up we don't want this to error out
+        with contextlib.suppress(KeyError):
+            used_paths.remove(cls.__path)
 
     def __repr__(cls) -> str:
         """Return a short representation of the entry."""
