@@ -1,9 +1,25 @@
 from itertools import chain
-from typing import Any, Dict, MutableMapping, NoReturn, Optional, Tuple
+from typing import Any, Dict, List, MutableMapping, NoReturn, Optional, Tuple
 
 from smartconfig import _registry
 from smartconfig._registry import get_attribute, unload_defaults, used_paths
 from smartconfig.exceptions import ConfigurationError, ConfigurationKeyError, InvalidOperation, PathConflict
+
+
+_unchecked_entries: List["_ConfigEntryMeta"] = []
+
+
+def check_attributes() -> None:
+    """
+    Perform attribute checks on entries that haven't been checked yet.
+
+    This is only useful if you have set `defer_attribute_check` to True.
+
+    Raises:
+        ConfigurationKeyError: One of the attribute doesn't exist.
+    """
+    while _unchecked_entries:
+        _unchecked_entries.pop()._check_undefined_entries()
 
 
 class _ConfigEntryMeta(type):
@@ -34,9 +50,16 @@ class _ConfigEntryMeta(type):
 
         return get_attribute(cls.__path, name)
 
-    def __new__(mcs, name: str, bases: Tuple[type, ...], dict_: Dict[str, Any], path: Optional[str] = None) -> type:
+    def __new__(
+            cls,
+            name: str,
+            bases: Tuple[type, ...],
+            dict_: Dict[str, Any],
+            path: Optional[str] = None,
+            defer_attribute_check: bool = False
+    ) -> type:
         """Create and return new instance (a class) of this type."""
-        return super().__new__(mcs, name, bases, dict_)
+        return super().__new__(cls, name, bases, dict_)
 
     def _register_entry(cls) -> None:
         """Register the entry's path and store its default values in the global configuration."""
@@ -60,7 +83,14 @@ class _ConfigEntryMeta(type):
                 except (ConfigurationError, ConfigurationKeyError):
                     raise ConfigurationKeyError(f"Attribute {attribute!r} doesn't have a defined value.") from None
 
-    def __init__(cls, name: str, bases: Tuple[type, ...], dict_: Dict[str, Any], path: Optional[str] = None):
+    def __init__(
+            cls,
+            name: str,
+            bases: Tuple[type, ...],
+            dict_: Dict[str, Any],
+            path: Optional[str] = None,
+            defer_attribute_check: bool = False
+    ):
         """Initialise the new entry."""
         super().__init__(name, bases, dict_)
 
@@ -69,7 +99,10 @@ class _ConfigEntryMeta(type):
             raise PathConflict(f"An entry at {cls.__path!r} already exists.")
 
         cls._register_entry()
-        cls._check_undefined_entries()
+        if not defer_attribute_check:
+            cls._check_undefined_entries()
+        else:
+            _unchecked_entries.append(cls)
 
     def __del__(cls) -> None:
         """Remove the default values from the global configuration and free the entry's path."""
@@ -102,6 +135,8 @@ class ConfigEntry(metaclass=_ConfigEntryMeta):
     Metaclass Args:
         path: Path to use for attribute lookup in the config.
             Default to the containing module's fully-qualified name when the value is None or an empty string.
+        defer_attribute_check: Whenever checking for missing attributes should be done at a later date.
+            Use `check_attributes()` to perform the check. Default to False.
 
     Raises:
         PathConflict: An entry is already registered at `path`.

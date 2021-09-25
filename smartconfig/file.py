@@ -66,9 +66,23 @@ def _update_mapping(
     return dest
 
 
+def check_constructors() -> None:
+    """
+    Validate that each loaded constructor is valid.
+
+    This function should only be called if `defer_constructor_check` was set to True when loading your configuration.
+
+    Raises
+        ConfigurationError: A !REF constructor contains a circular reference.
+    """
+    while _unchecked_constructors:
+        _unchecked_constructors.pop().check_circular_reference()
+
+
 def load(
         path: Union[AnyStr, PathLike],
         encoding: Optional[str] = None,
+        defer_constructor_check: bool = False,
         yaml_loader: Type[yaml.Loader] = SmartconfigYamlFullLoader
 ) -> None:
     """
@@ -120,6 +134,8 @@ def load(
         path: The path to the configuration file.
         encoding: The encoding with which to open the file. Same as the `encoding` parameter of the `open()` built-in.
             PyYAML only supports utf-16-le, utf-16-be, and utf-8. utf-8 is assumed if the former two are not detected.
+        defer_constructor_check: Whenever the constructors validity should be deferred to a later date.
+            Use `check_constructors()` later on to perform this check.
         yaml_loader: The YAML loader to use. Default to a full loader with the !REF constructor added.
 
     Raises:
@@ -129,10 +145,14 @@ def load(
         ConfigurationError: A !REF constructor contains a circular reference.
     """
     with open(path, encoding=encoding) as file:
-        load_stream(file, yaml_loader)
+        load_stream(file, defer_constructor_check, yaml_loader)
 
 
-def load_stream(stream: Union[AnyStr, IO[AnyStr]], yaml_loader: Type[yaml.Loader] = SmartconfigYamlFullLoader) -> None:
+def load_stream(
+        stream: Union[AnyStr, IO[AnyStr]],
+        defer_constructor_check: bool = False,
+        yaml_loader: Type[yaml.Loader] = SmartconfigYamlFullLoader
+) -> None:
     """
     Read a YAML config from `stream` and update the configuration with its values.
 
@@ -141,6 +161,8 @@ def load_stream(stream: Union[AnyStr, IO[AnyStr]], yaml_loader: Type[yaml.Loader
     Args:
         stream: The content of the YAML config to load.
             Must be a `str`, Unicode-encoded `bytes`, or readable file-like object which yields one of the former.
+        defer_constructor_check: Whenever the constructors validity should be verified at a later date.
+            Use `check_constructors()` later on to perform this check. Default to False.
         yaml_loader: The YAML loader to use. Default to a full loader with the !REF constructor added.
 
     Raises:
@@ -158,8 +180,8 @@ def load_stream(stream: Union[AnyStr, IO[AnyStr]], yaml_loader: Type[yaml.Loader
         )
 
     # Check constructors for circular references
-    while _unchecked_constructors:
-        _unchecked_constructors.pop().check_circular_reference()
+    if not defer_constructor_check:
+        check_constructors()
 
 
 SmartconfigYamlFullLoader.add_constructor("!REF", _ref_constructor)

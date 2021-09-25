@@ -3,7 +3,7 @@ from typing import Any, Dict, List, NoReturn
 import yaml
 
 from smartconfig._registry import get_attribute, get_node
-from smartconfig.exceptions import ConfigurationError, ConfigurationKeyError, InvalidOperation
+from smartconfig.exceptions import ConfigurationError, ConfigurationKeyError
 
 _constructor_mapping: Dict["AttributeReference", Any] = {}
 _unchecked_constructors: List["AttributeReference"] = []
