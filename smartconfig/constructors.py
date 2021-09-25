@@ -27,21 +27,21 @@ class AttributeReference:
             self.attribute = None
 
     def check_circular_reference(self) -> None:
-        """Raises InvalidOperation if a circular reference is detected."""
+        """Raise ConfigurationError if a circular reference is detected."""
         visited_references = set()
         current_constructor = self
 
         while hasattr(current_constructor, "__get__"):
             if current_constructor in visited_references:
-                raise InvalidOperation(f"Circular referencing starting from !REF {self.full_path} detected.")
+                raise ConfigurationError(f"Circular reference starting at !REF {self.full_path}.")
             visited_references.add(current_constructor)
 
-            # We only pass follow_descriptors if we are sure that it will be accepted by the callee.
+            # Only pass follow_descriptors for AttributeReference since it's a custom argument.
             if isinstance(current_constructor, AttributeReference):
                 try:
                     current_constructor = current_constructor.__get__(follow_descriptors=False)
                 except (ConfigurationError, ConfigurationKeyError):
-                    # We reached the end of chain
+                    # Reached the end of the chain.
                     break
             else:
                 current_constructor = current_constructor.__get__()
@@ -53,7 +53,7 @@ class AttributeReference:
             return get_node(self.path, follow_descriptors)
 
     def __set__(self, *_) -> NoReturn:
-        raise NotImplementedError("Setting values of REF constructors isn't allowed.")
+        raise NotImplementedError("Setting the value of a reference is not supported.")
 
     def __repr__(self):
         return f"{self.__class__.__name__}(path={self.full_path})"

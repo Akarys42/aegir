@@ -26,7 +26,7 @@ def _get_child_node(node_name: str, root: Any, follow_descriptors: bool = True) 
     Args:
         node_name: The name of the child node to retrieve.
         root: The parent node of the node to retrieve.
-        follow_descriptors: Should the lookup follow descriptors.
+        follow_descriptors: True if values should be retrieved through descriptors when encountered.
 
     Returns:
         The value of the child node.
@@ -56,21 +56,21 @@ def unload_defaults(path: str) -> None:
 
     Args:
         path: The dot-delimited path to the parent node.
-    """
-    try:
-        node = get_node(path)
-    except (ConfigurationError, ConfigurationKeyError):
-        return
 
+    Raises:
+        ConfigurationError: A node along the path is not a mapping node or the final node isn't a mutable mapping.
+        ConfigurationKeyError: The path does not exist.
+    """
+    node = get_node(path)
     if not isinstance(node, MutableMapping):
-        raise ConfigurationError(f"Node at path {path!r} isn't a mapping.")
+        raise ConfigurationError(f"Node at path {path!r} isn't a mutable mapping.")
 
     for attribute in copy.copy(node):
         if f"{path}.{attribute}" not in overwritten_attributes:
             node.pop(attribute)
 
 
-def get_node(path: str, follow_descriptors: bool = True) -> Any:
+def get_node(path: str, follow_descriptors: bool = True, *, create: bool = False) -> Any:
     """
     Retrieve the value of the node located at `path` from the global configuration.
 
@@ -78,14 +78,15 @@ def get_node(path: str, follow_descriptors: bool = True) -> Any:
 
     Args:
         path: The dot-delimited path to the node.
-        follow_descriptors: Should the lookup follow descriptors.
+        follow_descriptors: True if values should be retrieved through descriptors when encountered.
+        create: True if non-existing nodes along the path should be created.
 
     Returns:
         The node at the requested path.
 
     Raises:
-        ConfigurationError: A node along the path is not a mapping node.
-        ConfigurationKeyError: The path does not exist.
+        ConfigurationError: A node along the path (excluding the final node) is not a mapping node.
+        ConfigurationKeyError: The path does not exist and `create` is False.
     """
     if path in mapping_cache:
         return mapping_cache[path]
@@ -93,7 +94,14 @@ def get_node(path: str, follow_descriptors: bool = True) -> Any:
     node = global_configuration
 
     for node_name in path.split('.'):
-        node = _get_child_node(node_name, node, follow_descriptors)
+        try:
+            node = _get_child_node(node_name, node, follow_descriptors)
+        except ConfigurationKeyError:
+            if create:
+                node[node_name] = {}
+                node = node[node_name]
+            else:
+                raise
 
     # Only cache mapping nodes.
     if isinstance(node, Mapping):
@@ -108,8 +116,8 @@ def get_attribute(path: str, attribute: str, follow_descriptors: bool = True) ->
 
     Args:
         path: The dot-delimited path to the parent of the attribute to retrieve.
-        attribute: The name of the attribute to find
-        follow_descriptors: Should the lookup follow descriptors.
+        attribute: The name of the attribute to retrieve.
+        follow_descriptors: True if values should be retrieved through descriptors when encountered.
 
     Returns:
         The value of the attribute.

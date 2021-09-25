@@ -8,13 +8,13 @@ from smartconfig.exceptions import (
     PathConflict,
     SmartconfigException
 )
-from smartconfig.file import load
+from smartconfig.file import load, load_stream
 
 __version__ = "0.0.0-dev1"
 
 __all__ = (
     # Main API
-    "ConfigEntry", "load",
+    "ConfigEntry", "load", "load_stream",
 
     # Exceptions
     "SmartconfigException", "ConfigurationKeyError", "PathConflict", "InvalidOperation", "ConfigurationError",

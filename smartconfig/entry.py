@@ -8,121 +8,108 @@ from smartconfig.exceptions import ConfigurationError, ConfigurationKeyError, In
 
 class _ConfigEntryMeta(type):
     """
-    Metaclass used to define special ConfigEntry behaviors.
+    Metaclass used to define special ConfigEntry behaviour.
+
+    See the documentation of `ConfigEntry`.
 
     Note: Using this metaclass outside of the library is currently not supported.
     """
 
-    def __getattribute__(cls, name: str) -> Optional[Any]:
+    def __getattribute__(cls, name: str) -> Any:
         """
         Look up the attribute through the configuration system.
 
-        If the attribute name starts with `_`, normal lookup is done, otherwise _registry.global_configuration is used.
+        If the attribute's name starts with `_`, use the default Python behaviour for attribute lookup.
+        Otherwise, retrieve the value from the loaded configurations or the default value.
 
         Args:
-            name: Attribute to lookup
+            name: Name of the attribute to retrieve.
 
         Raises:
+            ConfigurationError: A node along the path is not a mapping node.
             ConfigurationKeyError: The attribute doesn't exist.
         """
-        # Use the normal lookup for attribute starting with `_`
         if name.startswith('_'):
             return super().__getattribute__(name)
 
         return get_attribute(cls.__path, name)
 
-    def __new__(cls, name: str, bases: Tuple[type, ...], dict_: Dict[str, Any], path: Optional[str] = None) -> type:
-        """
-        Add the `__defined_attributes` and `__path_override` attributes to the new entry.
-
-        Args:
-            path: Custom path used for this entry instead of the module name.
-        """
-        dict_[f"{cls.__name__}__path_override"] = path
-
-        return super().__new__(cls, name, bases, dict_)
+    def __new__(mcs, name: str, bases: Tuple[type, ...], dict_: Dict[str, Any], path: Optional[str] = None) -> type:
+        """Create and return new instance (a class) of this type."""
+        return super().__new__(mcs, name, bases, dict_)
 
     def _register_entry(cls) -> None:
-        """Set the `__path` attribute and register the entry."""
-        cls.__path = cls.__path_override or cls.__module__
-        if cls.__path in _registry.used_paths:
-            raise PathConflict(f"An entry at {cls.__path!r} already exists.")  # TODO: Add an FAQ link.
+        """Register the entry's path and store its default values in the global configuration."""
+        node = _registry.get_node(cls.__path, create=True)
+        if not isinstance(node, MutableMapping):
+            raise ConfigurationError(f"Node at path {cls.__path!r} isn't a mutable mapping.")
 
-        configuration = {
-            key: value for key, value in cls.__dict__.items() if not key.startswith('_')
-        }
-
-        current_node = _registry.global_configuration
-
-        for node_name in cls.__path.split("."):
-            current_node = current_node.setdefault(node_name, {})
-
-            if not isinstance(current_node, MutableMapping):
-                raise ConfigurationError(f"Node at path {cls.__path!r} isn't a mapping.")
-
-        for key, value in configuration.items():
-            # We only write values that aren't already defined.
-            if key not in current_node:
-                current_node[key] = value
+        for key, value in cls.__dict__.items():
+            # Ignore "private" attributes and only write values that aren't already defined.
+            if not key.startswith('_') and key not in node:
+                node[key] = value
 
         used_paths.add(cls.__path)
 
     def _check_undefined_entries(cls) -> None:
         """Raise `ConfigurationKeyError` if any attribute doesn't have a defined value."""
-        defined_attributes = [
-            name for name in chain(cls.__dict__.keys(), getattr(cls, "__annotations__", ())) if not name.startswith('_')
-        ]
-
-        for attribute in defined_attributes:
-            try:
-                get_attribute(cls.__path, attribute)
-            except (ConfigurationError, ConfigurationKeyError):
-                raise ConfigurationKeyError(f"Attribute {attribute!r} doesn't have a defined value.") from None
+        for attribute in chain(cls.__dict__.keys(), getattr(cls, "__annotations__", ())):
+            if not attribute.startswith('_'):
+                try:
+                    get_attribute(cls.__path, attribute)
+                except (ConfigurationError, ConfigurationKeyError):
+                    raise ConfigurationKeyError(f"Attribute {attribute!r} doesn't have a defined value.") from None
 
     def __init__(cls, name: str, bases: Tuple[type, ...], dict_: Dict[str, Any], path: Optional[str] = None):
-        """
-        Initialize the new entry.
-
-        Raises:
-            PathConflict: An entry is already registered for this path. Use the `path` metaclass argument.
-            ConfigurationKeyError: An attribute doesn't have a defined value.
-        """
+        """Initialise the new entry."""
         super().__init__(name, bases, dict_)
+
+        cls.__path = path or cls.__module__
+        if cls.__path in _registry.used_paths:
+            raise PathConflict(f"An entry at {cls.__path!r} already exists.")
 
         cls._register_entry()
         cls._check_undefined_entries()
 
     def __del__(cls) -> None:
-        """Cleanup the defaults from the global configuration."""
-        unload_defaults(cls.__path)
+        """Remove the default values from the global configuration and free the entry's path."""
+        try:
+            unload_defaults(cls.__path)
+        except (ConfigurationError, ConfigurationKeyError):
+            # Fail silently because the same error may have already been raised while the object was being initialised.
+            # There's no way to distinguish such case from the state being modified after successful initialisation.
+            # Besides, there's nothing that can be done for cleanup if the node can't be retrieved.
+            return
+
         used_paths.remove(cls.__path)
 
     def __repr__(cls) -> str:
         """Return a short representation of the entry."""
-        if hasattr(cls, '__path'):
-            return f"<_ConfigEntryMeta {cls.__name__} at {cls.__path!r}>"
+        if cls is ConfigEntry:
+            return super().__repr__()
         else:
-            return f"<_ConfigEntryMeta {cls.__name__}>"
-
-    def __eq__(cls, other: Any) -> bool:
-        """Return true if this entry and the other point to the same path."""
-        if not isinstance(other, _ConfigEntryMeta):
-            return NotImplemented
-        return cls.__path == other.__path
+            return f"<ConfigEntry {cls.__qualname__!r} at {cls.__path!r}>"
 
 
 class ConfigEntry(metaclass=_ConfigEntryMeta):
     """
-    Base class for new configuration entries.
+    Base class for configuration entries.
 
-    Class attributes of the subclasses can be overwritten using YAML configuration files.
-    The entry will use its default values and potentially directly override them with already loaded configurations,
-    and will also be overwritten in the future by newly loaded configurations.
-    Attributes starting by an underscore (_) will be looked up through a normal class attribute lookup.
+    Values of class attributes can be overwritten by loading YAML configuration files. Otherwise, their given default
+    values will be used. The exception is class attributes whose names begin with an underscore; they always behave like
+    normal class attributes and therefore their values cannot be overwritten by config files.
 
-    The default path used by an entry is the name of the module it is defined in, or the `path` metaclass argument.
+    Metaclass Args:
+        path: Path to use for attribute lookup in the config.
+            Default to the containing module's fully-qualified name when the value is None or an empty string.
+
+    Raises:
+        PathConflict: An entry is already registered at `path`.
+        ConfigurationError: A node along `path` is not a mapping node.
+        ConfigurationKeyError: A class attribute doesn't have a defined value.
+        InvalidOperation: This class or a subclass of it is instantiated.
     """
 
     def __init__(self) -> NoReturn:
-        """Raises `InvalidOperation` as creating instances isn't allowed."""
+        """Raise `InvalidOperation` because creating instances isn't allowed."""
         raise InvalidOperation("Creating instances of ConfigEntry isn't allowed.")

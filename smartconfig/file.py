@@ -1,5 +1,5 @@
 from os import PathLike
-from typing import Mapping, MutableMapping, Set, Type, Union
+from typing import AnyStr, IO, Mapping, MutableMapping, Optional, Set, Type, Union
 
 import yaml
 
@@ -66,7 +66,11 @@ def _update_mapping(
     return dest
 
 
-def load(path: Union[str, bytes, PathLike], *, yaml_loader: Type[yaml.Loader] = SmartconfigYamlFullLoader) -> None:
+def load(
+        path: Union[AnyStr, PathLike],
+        encoding: Optional[str] = None,
+        yaml_loader: Type[yaml.Loader] = SmartconfigYamlFullLoader
+) -> None:
     """
     Read a YAML file at `path` and update the configuration with its values.
 
@@ -99,7 +103,7 @@ def load(path: Union[str, bytes, PathLike], *, yaml_loader: Type[yaml.Loader] = 
     a `ConfigEntry`. There could be nodes that are simply not used at all. It's even valid for the root to not be a
     mapping node. Such file would effectively configure nothing, but loading it is still supported.
 
-    A special !REF construct can be used to point to another attribute. For instance,
+    A !REF constructor can be used to reference another attribute of a `ConfigEntry`. For example,
 
     module_1:
       class:
@@ -107,23 +111,44 @@ def load(path: Union[str, bytes, PathLike], *, yaml_loader: Type[yaml.Loader] = 
 
     module_2:
       class:
-        reference: !REF module_1.class.attribute_1
+        attribute_2: !REF module_1.class.attribute_1
 
-    module_2.class.reference will have the same value as module_1.class.attribute_1 even if it is later overwrote by
-    a configuration file.
+    would make `attribute_2` have the same value as `attribute_1`. As described above, the value of `attribute_1`
+    follows the same behaviour expected for any other attribute.
 
     Args:
         path: The path to the configuration file.
+        encoding: The encoding with which to open the file. Same as the `encoding` parameter of the `open()` built-in.
+            PyYAML only supports utf-16-le, utf-16-be, and utf-8. utf-8 is assumed if the former two are not detected.
         yaml_loader: The YAML loader to use. Default to a full loader with the !REF constructor added.
 
     Raises:
         FileNotFoundError: The configuration file doesn't exist.
-        IOError: An error occurred when reading the file.
+        IOError: An error occurred while reading the file.
         yaml.YAMLError: PyYAML failed to load the YAML.
-        InvalidOperation: A !REF constructor contains a circular reference.
+        ConfigurationError: A !REF constructor contains a circular reference.
     """
-    with open(path) as file:
-        yaml_content = yaml.load(file, Loader=yaml_loader)
+    with open(path, encoding=encoding) as file:
+        load_stream(file, yaml_loader)
+
+
+def load_stream(stream: Union[AnyStr, IO[AnyStr]], yaml_loader: Type[yaml.Loader] = SmartconfigYamlFullLoader) -> None:
+    """
+    Read a YAML config from `stream` and update the configuration with its values.
+
+    See the documentation of `smartconfig.load()`.
+
+    Args:
+        stream: The content of the YAML config to load.
+            Must be a `str`, Unicode-encoded `bytes`, or readable file-like object which yields one of the former.
+        yaml_loader: The YAML loader to use. Default to a full loader with the !REF constructor added.
+
+    Raises:
+        IOError: An error occurred while reading the stream.
+        yaml.YAMLError: PyYAML failed to load the YAML.
+        ConfigurationError: A !REF constructor contains a circular reference.
+    """
+    yaml_content = yaml.load(stream, Loader=yaml_loader)
 
     if isinstance(yaml_content, Mapping):
         _registry.global_configuration = _update_mapping(
