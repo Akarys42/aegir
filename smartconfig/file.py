@@ -71,7 +71,7 @@ def check_constructors() -> None:
     """
     Validate that each loaded constructor is valid.
 
-    This function should only be called if `defer_constructor_check` was set to True when loading your configuration.
+    This is only useful if `defer_constructor_check` was set to True after loading a configuration.
 
     Raises
         ConfigurationError: A !REF constructor contains a circular reference.

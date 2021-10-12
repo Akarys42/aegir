@@ -12,12 +12,12 @@ _unchecked_entries: List["_ConfigEntryMeta"] = []
 
 def check_attributes() -> None:
     """
-    Perform attribute checks on entries that haven't been checked yet.
+    For all unchecked entries, check that all their attributes have defined values.
 
-    This is only useful if you have set `defer_attribute_check` to True.
+    This is only useful if `defer_constructor_check` was set to True after loading a configuration.
 
     Raises:
-        ConfigurationKeyError: One of the attribute doesn't exist.
+        ConfigurationKeyError: An attribute of an entry doesn't have a defined value.
     """
     while _unchecked_entries:
         _unchecked_entries.pop()._check_undefined_entries()
