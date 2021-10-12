@@ -83,7 +83,7 @@ def check_constructors() -> None:
 def load(
         path: Union[AnyStr, PathLike],
         encoding: Optional[str] = None,
-        defer_constructor_check: bool = False,
+        check_constructors_: bool = True,
         yaml_loader: Type[yaml.Loader] = SmartconfigYamlFullLoader
 ) -> None:
     """
@@ -135,8 +135,8 @@ def load(
         path: The path to the configuration file.
         encoding: The encoding with which to open the file. Same as the `encoding` parameter of the `open()` built-in.
             PyYAML only supports utf-16-le, utf-16-be, and utf-8. utf-8 is assumed if the former two are not detected.
-        defer_constructor_check: Whenever the constructors validity should be deferred to a later date.
-            Use `check_constructors()` later on to perform this check.
+        check_constructors_: True if constructors should be validated right after loading.
+            If False, `check_constructors()` can be manually called later. Default to True.
         yaml_loader: The YAML loader to use. Default to a full loader with the !REF constructor added.
 
     Raises:
@@ -146,12 +146,12 @@ def load(
         ConfigurationError: A !REF constructor contains a circular reference.
     """
     with open(path, encoding=encoding) as file:
-        load_stream(file, defer_constructor_check, yaml_loader)
+        load_stream(file, check_constructors_, yaml_loader)
 
 
 def load_stream(
         stream: Union[AnyStr, IO[AnyStr]],
-        defer_constructor_check: bool = False,
+        check_constructors_: bool = True,
         yaml_loader: Type[yaml.Loader] = SmartconfigYamlFullLoader
 ) -> None:
     """
@@ -162,8 +162,8 @@ def load_stream(
     Args:
         stream: The content of the YAML config to load.
             Must be a `str`, Unicode-encoded `bytes`, or readable file-like object which yields one of the former.
-        defer_constructor_check: Whenever the constructors validity should be verified at a later date.
-            Use `check_constructors()` later on to perform this check. Default to False.
+        check_constructors_: True if constructors should be validated right after loading.
+            If False, `check_constructors()` can be manually called later. Default to True.
         yaml_loader: The YAML loader to use. Default to a full loader with the !REF constructor added.
 
     Raises:
@@ -181,7 +181,7 @@ def load_stream(
         )
 
     # Check constructors for circular references
-    if not defer_constructor_check:
+    if check_constructors_:
         check_constructors()
 
 

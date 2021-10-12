@@ -90,7 +90,7 @@ class _ConfigEntryMeta(type):
             bases: Tuple[type, ...],
             dict_: Dict[str, Any],
             path: Optional[str] = None,
-            defer_attribute_check: bool = False
+            check_attributes: bool = True
     ):
         """Initialise the new entry."""
         super().__init__(name, bases, dict_)
@@ -100,7 +100,7 @@ class _ConfigEntryMeta(type):
             raise PathConflict(f"An entry at {cls.__path!r} already exists.")
 
         cls._register_entry()
-        if not defer_attribute_check:
+        if check_attributes:
             cls._check_undefined_entries()
         else:
             _unchecked_entries.append(cls)
@@ -138,8 +138,8 @@ class ConfigEntry(metaclass=_ConfigEntryMeta):
     Metaclass Args:
         path: Path to use for attribute lookup in the config.
             Default to the containing module's fully-qualified name when the value is None or an empty string.
-        defer_attribute_check: Whenever checking for missing attributes should be done at a later date.
-            Use `check_attributes()` to perform the check. Default to False.
+        check_attributes: True if a check should be performed for attributes without defined values.
+            If False, `check_attributes()` can be manually called later. Default to True.
 
     Raises:
         PathConflict: An entry is already registered at `path`.
