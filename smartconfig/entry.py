@@ -14,7 +14,7 @@ def check_attributes() -> None:
     """
     For all unchecked entries, check that all their attributes have defined values.
 
-    This is only useful if `defer_constructor_check` was set to True after loading a configuration.
+    This is only useful if `check_attributes` was set to False after loading a configuration.
 
     Raises:
         ConfigurationKeyError: An attribute of an entry doesn't have a defined value.
@@ -57,7 +57,7 @@ class _ConfigEntryMeta(type):
             bases: Tuple[type, ...],
             dict_: Dict[str, Any],
             path: Optional[str] = None,
-            defer_attribute_check: bool = False
+            check_attributes: bool = True
     ) -> type:
         """Create and return new instance (a class) of this type."""
         return super().__new__(cls, name, bases, dict_)
