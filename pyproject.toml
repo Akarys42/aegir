@@ -1,8 +1,8 @@
 [tool.flit.metadata]
 module = "smartconfig"
-author = "Python Discord"
-author-email = "staff@pythondiscord.com"
-home-page = "https://github.com/pythondiscord/smartconfig"
+author = "Matteo Bertucci"
+author-email = "matteobertucci2004@gmail.com"
+home-page = "https://github.com/akarys42/smartconfig"
 description-file = "README.md"
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",
@@ -14,6 +14,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules"
 ]
 requires-python = ">=3.8"
+requires = ["PyYAML ~= 5.3"]
 
 [tool.flit.metadata.requires-extra]
 dev = [
