@@ -1,0 +1,27 @@
+name: Publish package to PyPi
+
+on:
+  push:
+    branches: [ release ]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Python
+        id: python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.x
+
+      - name: Install flit
+        run: pip install flit
+
+      - name: Build and upload
+        run: |
+          flit publish
+        env:
+          FLIT_USERNAME: ${{ secrets.PYPI_USERNAME }}
+          FLIT_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
