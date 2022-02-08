@@ -1,6 +1,6 @@
-# Smartconfig
+# Aegir
 
-Smartconfig is a library allowing you to add configuration options to your Python project without any additional work.
+Aegir is a library allowing you to add configuration options to your Python project without any additional work.
 
 # Usage
 
@@ -10,7 +10,7 @@ Here is an example of a configuration entry:
 
 ```python
 # file: my_app/example.py
-from smartconfig import ConfigEntry
+from aegir import ConfigEntry
 
 class MyEntry(ConfigEntry):
     my_str: str = "default_value"
@@ -39,7 +39,7 @@ my_app.example:
 The `load()` function will replace those attributes with the ones from the configuration file.
 
 ```python
->>> from smartconfig import load
+>>> from aegir import load
 >>> load("my_config.yaml")
 >>> from my_app.example import MyEntry
 >>> MyEntry.my_str

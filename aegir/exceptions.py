@@ -1,27 +1,32 @@
-class SmartconfigException(Exception):
-    """Base exception of the `smartconfig` library."""
+class AegirException(Exception):
+    """Base exception of the `aegir` library."""
+
     pass
 
 
-class PathConflict(ValueError, SmartconfigException):
+class PathConflict(ValueError, AegirException):
     """
     Two configuration entries point to the same path.
 
     Specify a different path through the `path` argument of the metaclass.
     """
+
     pass
 
 
-class ConfigurationKeyError(AttributeError, SmartconfigException):
+class ConfigurationKeyError(AttributeError, AegirException):
     """An invalid key name has been used."""
+
     pass
 
 
-class InvalidOperation(RuntimeError, SmartconfigException):
+class InvalidOperation(RuntimeError, AegirException):
     """An invalid operation has been performed."""
+
     pass
 
 
-class ConfigurationError(ValueError, SmartconfigException):
+class ConfigurationError(ValueError, AegirException):
     """The provided configuration is invalid."""
+
     pass

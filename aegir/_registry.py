@@ -36,15 +36,19 @@ def _get_child_node(node_name: str, root: Any, follow_descriptors: bool = True) 
         ConfigurationKeyError: The child node does not exist.
     """
     if not isinstance(root, Mapping):
-        raise ConfigurationError(f"Cannot retrieve node {node_name!r}: its parent is not a mapping node.")
+        raise ConfigurationError(
+            f"Cannot retrieve node {node_name!r}: its parent is not a mapping node."
+        )
 
     if node_name not in root:
-        raise ConfigurationKeyError(f"Cannot retrieve node {node_name!r}: it does not exist.")
+        raise ConfigurationKeyError(
+            f"Cannot retrieve node {node_name!r}: it does not exist."
+        )
 
     node = root[node_name]
 
     # Use __get__ if the node is a descriptor.
-    if hasattr(node, '__get__') and follow_descriptors:
+    if hasattr(node, "__get__") and follow_descriptors:
         node = node.__get__()
 
     return node
@@ -70,7 +74,9 @@ def unload_defaults(path: str) -> None:
             node.pop(attribute)
 
 
-def get_node(path: str, follow_descriptors: bool = True, *, create: bool = False) -> Any:
+def get_node(
+    path: str, follow_descriptors: bool = True, *, create: bool = False
+) -> Any:
     """
     Retrieve the value of the node located at `path` from the global configuration.
 
@@ -93,7 +99,7 @@ def get_node(path: str, follow_descriptors: bool = True, *, create: bool = False
 
     node = global_configuration
 
-    for node_name in path.split('.'):
+    for node_name in path.split("."):
         try:
             node = _get_child_node(node_name, node, follow_descriptors)
         except ConfigurationKeyError:

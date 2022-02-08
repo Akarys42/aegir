@@ -1,8 +1,8 @@
 [tool.flit.metadata]
-module = "smartconfig"
+module = "aegir"
 author = "Matteo Bertucci"
 author-email = "matteobertucci2004@gmail.com"
-home-page = "https://github.com/akarys42/smartconfig"
+home-page = "https://github.com/akarys42/aegir"
 description-file = "README.md"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -27,7 +27,8 @@ dev = [
     "flake8-string-format ~= 0.2",
     "flake8-tidy-imports ~= 4.0",
     "flake8-todo ~= 0.7",
-    "pep8-naming ~= 0.9"
+    "pep8-naming ~= 0.9",
+    "black ~= 22.1",
 ]
 
 [build-system]

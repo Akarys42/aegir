@@ -2,9 +2,14 @@ import contextlib
 from itertools import chain
 from typing import Any, Dict, List, MutableMapping, NoReturn, Optional, Tuple
 
-from smartconfig import _registry
-from smartconfig._registry import get_attribute, unload_defaults, used_paths
-from smartconfig.exceptions import ConfigurationError, ConfigurationKeyError, InvalidOperation, PathConflict
+from aegir import _registry
+from aegir._registry import get_attribute, unload_defaults, used_paths
+from aegir.exceptions import (
+    ConfigurationError,
+    ConfigurationKeyError,
+    InvalidOperation,
+    PathConflict,
+)
 
 
 _unchecked_entries: List["_ConfigEntryMeta"] = []
@@ -46,18 +51,18 @@ class _ConfigEntryMeta(type):
             ConfigurationError: A node along the path is not a mapping node.
             ConfigurationKeyError: The attribute doesn't exist.
         """
-        if name.startswith('_'):
+        if name.startswith("_"):
             return super().__getattribute__(name)
 
         return get_attribute(cls.__path, name)
 
     def __new__(
-            cls,
-            name: str,
-            bases: Tuple[type, ...],
-            dict_: Dict[str, Any],
-            path: Optional[str] = None,
-            check_attributes: bool = True
+        cls,
+        name: str,
+        bases: Tuple[type, ...],
+        dict_: Dict[str, Any],
+        path: Optional[str] = None,
+        check_attributes: bool = True,
     ) -> type:
         """Create and return new instance (a class) of this type."""
         return super().__new__(cls, name, bases, dict_)
@@ -66,31 +71,37 @@ class _ConfigEntryMeta(type):
         """Register the entry's path and store its default values in the global configuration."""
         node = _registry.get_node(cls.__path, create=True)
         if not isinstance(node, MutableMapping):
-            raise ConfigurationError(f"Node at path {cls.__path!r} isn't a mutable mapping.")
+            raise ConfigurationError(
+                f"Node at path {cls.__path!r} isn't a mutable mapping."
+            )
 
         for key, value in cls.__dict__.items():
             # Ignore "private" attributes and only write values that aren't already defined.
-            if not key.startswith('_') and key not in node:
+            if not key.startswith("_") and key not in node:
                 node[key] = value
 
         used_paths.add(cls.__path)
 
     def _check_undefined_entries(cls) -> None:
         """Raise `ConfigurationKeyError` if any attribute doesn't have a defined value."""
-        for attribute in chain(cls.__dict__.keys(), getattr(cls, "__annotations__", ())):
-            if not attribute.startswith('_'):
+        for attribute in chain(
+            cls.__dict__.keys(), getattr(cls, "__annotations__", ())
+        ):
+            if not attribute.startswith("_"):
                 try:
                     get_attribute(cls.__path, attribute)
                 except (ConfigurationError, ConfigurationKeyError):
-                    raise ConfigurationKeyError(f"Attribute {attribute!r} doesn't have a defined value.") from None
+                    raise ConfigurationKeyError(
+                        f"Attribute {attribute!r} doesn't have a defined value."
+                    ) from None
 
     def __init__(
-            cls,
-            name: str,
-            bases: Tuple[type, ...],
-            dict_: Dict[str, Any],
-            path: Optional[str] = None,
-            check_attributes: bool = True
+        cls,
+        name: str,
+        bases: Tuple[type, ...],
+        dict_: Dict[str, Any],
+        path: Optional[str] = None,
+        check_attributes: bool = True,
     ):
         """Initialise the new entry."""
         super().__init__(name, bases, dict_)

@@ -3,20 +3,20 @@ from typing import AnyStr, IO, Mapping, MutableMapping, Optional, Set, Type, Uni
 
 import yaml
 
-from smartconfig import ConfigurationError, _registry
-from smartconfig._registry import used_paths
-from smartconfig.constructors import _ref_constructor, _unchecked_constructors
+from aegir import ConfigurationError, _registry
+from aegir._registry import used_paths
+from aegir.constructors import _ref_constructor, _unchecked_constructors
 
 
-class SmartconfigYamlFullLoader(yaml.FullLoader):
+class AegirYamlFullLoader(yaml.FullLoader):
     """Independent YAML loader to add constructors on it."""
 
 
 def _update_mapping(
-        source: Mapping,
-        dest: MutableMapping,
-        path: str = "",
-        node_paths: Set[str] = set()  # noqa: B006, this is safe since we don't mutate it
+    source: Mapping,
+    dest: MutableMapping,
+    path: str = "",
+    node_paths: Set[str] = set(),  # noqa: B006, this is safe since we don't mutate it
 ) -> MutableMapping:
     """
     Recursively update the `dest` mapping with values from `source`.
@@ -50,16 +50,20 @@ def _update_mapping(
         else:
             new_path = key
 
-        if '.' in key:
-            key, child_node = key.split('.', maxsplit=1)
-            dest[key] = _update_mapping({child_node: value}, dest.get(key, {}), f"{path}.{key}", node_paths)
+        if "." in key:
+            key, child_node = key.split(".", maxsplit=1)
+            dest[key] = _update_mapping(
+                {child_node: value}, dest.get(key, {}), f"{path}.{key}", node_paths
+            )
 
         elif isinstance(value, Mapping):
             _registry.overwritten_attributes.add(new_path)
             dest[key] = _update_mapping(value, dest.get(key, {}), new_path, node_paths)
         else:
             if new_path in node_paths:
-                raise ConfigurationError(f"Node at path {new_path!r} must be a mapping.")
+                raise ConfigurationError(
+                    f"Node at path {new_path!r} must be a mapping."
+                )
 
             _registry.overwritten_attributes.add(new_path)
             dest[key] = value
@@ -81,10 +85,10 @@ def check_constructors() -> None:
 
 
 def load(
-        path: Union[AnyStr, PathLike],
-        encoding: Optional[str] = None,
-        check_constructors_: bool = True,
-        yaml_loader: Type[yaml.Loader] = SmartconfigYamlFullLoader
+    path: Union[AnyStr, PathLike],
+    encoding: Optional[str] = None,
+    check_constructors_: bool = True,
+    yaml_loader: Type[yaml.Loader] = AegirYamlFullLoader,
 ) -> None:
     """
     Read a YAML file at `path` and update the configuration with its values.
@@ -150,14 +154,14 @@ def load(
 
 
 def load_stream(
-        stream: Union[AnyStr, IO[AnyStr]],
-        check_constructors_: bool = True,
-        yaml_loader: Type[yaml.Loader] = SmartconfigYamlFullLoader
+    stream: Union[AnyStr, IO[AnyStr]],
+    check_constructors_: bool = True,
+    yaml_loader: Type[yaml.Loader] = AegirYamlFullLoader,
 ) -> None:
     """
     Read a YAML config from `stream` and update the configuration with its values.
 
-    See the documentation of `smartconfig.load()`.
+    See the documentation of `aegir.load()`.
 
     Args:
         stream: The content of the YAML config to load.
@@ -175,9 +179,7 @@ def load_stream(
 
     if isinstance(yaml_content, Mapping):
         _registry.global_configuration = _update_mapping(
-            yaml_content,
-            _registry.global_configuration,
-            node_paths=used_paths
+            yaml_content, _registry.global_configuration, node_paths=used_paths
         )
 
     # Check constructors for circular references
@@ -185,4 +187,4 @@ def load_stream(
         check_constructors()
 
 
-SmartconfigYamlFullLoader.add_constructor("!REF", _ref_constructor)
+AegirYamlFullLoader.add_constructor("!REF", _ref_constructor)
