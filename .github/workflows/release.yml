@@ -2,9 +2,7 @@ name: Publish package to PyPi
 
 on:
   push:
-    branches: [ add-release-workflow, release ]
-    #TODO: remove add-release-workflow
-
+    branches: [ release ]
 
 jobs:
   publish:
@@ -23,8 +21,7 @@ jobs:
 
       - name: Build and upload
         run: |
-          flit publish --repository testpypi
-          #TODO: switch to production PyPi
+          flit publish
         env:
           FLIT_USERNAME: ${{ secrets.PYPI_USERNAME }}
           FLIT_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
