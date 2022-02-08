@@ -10,7 +10,7 @@ from smartconfig.exceptions import (
 )
 from smartconfig.file import check_constructors, load, load_stream
 
-__version__ = "0.0.0-dev1"
+__version__ = "1.0.0"
 
 __all__ = (
     # Main API

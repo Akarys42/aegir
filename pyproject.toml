@@ -5,7 +5,7 @@ author-email = "matteobertucci2004@gmail.com"
 home-page = "https://github.com/akarys42/smartconfig"
 description-file = "README.md"
 classifiers = [
-    "Development Status :: 2 - Pre-Alpha",
+    "Development Status :: 5 - Production/Stable",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
