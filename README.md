@@ -87,8 +87,18 @@ my_app.example:
 
 # API documentation
 
-For more details about the API, and some other interfaces not listed in this document, please see the full documentation. Right now you can't see it because I'm setting it up, but I swear it will come soon.
+For more details about the API, and some other interfaces not listed in this document, please see [the full documentation](https://aegir-config.readthedocs.io/en/rtd/index.html).
 
 # Installation
 
-It will be available on PyPI soon-ish.
+The package is available on PyPI under the name [`aegir`](https://pypi.org/project/aegir/).
+
+```
+$ pip install aegir
+$ poetry add aegir
+$ pipenv install aegir
+```
+
+# Contributing
+
+If you would like to join, please join [our Discord server](https://discord.akarys.me) and introduce yourself in `#aegir`. Thank you for your interest in our project!
