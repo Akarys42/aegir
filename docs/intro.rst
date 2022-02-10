@@ -1,7 +1,5 @@
-Welcome to Aegir's documentation!
-=================================
-
-Aegir is a library allowing you to add configuration options to your Python project without any additional work.
+Introduction
+============
 
 This system articulates around configuration entries, subclassing :class:`aegir.ConfigEntry`, being class that have attributes that can be automatically overridden by a configuration file.
 

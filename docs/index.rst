@@ -3,6 +3,10 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+Welcome to the Aegir's documentation!
+=====================================
+
+Aegir is a library allowing you to add configuration options to your Python project without any additional work, so you don't *drown* under the complexity.
 
 .. toctree::
    :maxdepth: 2
