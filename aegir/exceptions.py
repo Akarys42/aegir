@@ -1,5 +1,5 @@
 class AegirException(Exception):
-    """Base exception of the `aegir` library."""
+    """Base exception of the ``aegir`` library."""
 
     pass
 
@@ -8,7 +8,7 @@ class PathConflict(ValueError, AegirException):
     """
     Two configuration entries point to the same path.
 
-    Specify a different path through the `path` argument of the metaclass.
+    Specify a different path through the ``path`` argument of the metaclass.
     """
 
     pass
