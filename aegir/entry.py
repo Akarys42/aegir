@@ -19,7 +19,7 @@ def check_attributes() -> None:
     """
     For all unchecked entries, check that all their attributes have defined values.
 
-    This is only useful if `check_attributes` was set to False after loading a configuration.
+    This is only useful if ``check_attributes`` was set to False after loading a configuration.
 
     Raises:
         ConfigurationKeyError: An attribute of an entry doesn't have a defined value.
@@ -32,7 +32,7 @@ class _ConfigEntryMeta(type):
     """
     Metaclass used to define special ConfigEntry behaviour.
 
-    See the documentation of `ConfigEntry`.
+    See the documentation of :class:`ConfigEntry`.
 
     Note: Using this metaclass outside of the library is currently not supported.
     """
@@ -41,7 +41,7 @@ class _ConfigEntryMeta(type):
         """
         Look up the attribute through the configuration system.
 
-        If the attribute's name starts with `_`, use the default Python behaviour for attribute lookup.
+        If the attribute's name starts with ``_``, use the default Python behaviour for attribute lookup.
         Otherwise, retrieve the value from the loaded configurations or the default value.
 
         Args:
@@ -83,7 +83,7 @@ class _ConfigEntryMeta(type):
         used_paths.add(cls.__path)
 
     def _check_undefined_entries(cls) -> None:
-        """Raise `ConfigurationKeyError` if any attribute doesn't have a defined value."""
+        """Raise :class:`ConfigurationKeyError` if any attribute doesn't have a defined value."""
         for attribute in chain(
             cls.__dict__.keys(), getattr(cls, "__annotations__", ())
         ):
@@ -146,19 +146,19 @@ class ConfigEntry(metaclass=_ConfigEntryMeta):
     values will be used. The exception is class attributes whose names begin with an underscore; they always behave like
     normal class attributes and therefore their values cannot be overwritten by config files.
 
-    Metaclass Args:
-        path: Path to use for attribute lookup in the config.
+    Args:
+        path (str): Path to use for attribute lookup in the config.
             Default to the containing module's fully-qualified name when the value is None or an empty string.
-        check_attributes: True if a check should be performed for attributes without defined values.
-            If False, `check_attributes()` can be manually called later. Default to True.
+        check_attributes (bool): True if a check should be performed for attributes without defined values.
+            If False, :func:`check_attributes()` can be manually called later. Default to True.
 
     Raises:
-        PathConflict: An entry is already registered at `path`.
-        ConfigurationError: A node along `path` is not a mapping node.
+        PathConflict: An entry is already registered at ``path``.
+        ConfigurationError: A node along ``path`` is not a mapping node.
         ConfigurationKeyError: A class attribute doesn't have a defined value.
         InvalidOperation: This class or a subclass of it is instantiated.
     """
 
     def __init__(self) -> NoReturn:
-        """Raise `InvalidOperation` because creating instances isn't allowed."""
+        """Raise :class:`InvalidOperation` because creating instances isn't allowed."""
         raise InvalidOperation("Creating instances of ConfigEntry isn't allowed.")
