@@ -87,7 +87,7 @@ my_app.example:
 
 # API documentation
 
-For more details about the API, and some other interfaces not listed in this document, please see [the full documentation](https://aegir-config.readthedocs.io/en/rtd/index.html).
+For more details about the API, and some other interfaces not listed in this document, please see [the full documentation](https://aegir-config.readthedocs.io/en/latest/index.html).
 
 # Installation
 
