@@ -1,7 +1,7 @@
 [tool.flit.metadata]
 module = "aegir"
-author = "Matteo Bertucci"
-author-email = "matteobertucci2004@gmail.com"
+author = "Amber Bertucci"
+author-email = "amber@akarys.me"
 home-page = "https://github.com/akarys42/aegir"
 description-file = "README.md"
 classifiers = [

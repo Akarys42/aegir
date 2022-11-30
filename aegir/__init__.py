@@ -10,7 +10,7 @@ from aegir.exceptions import (
 )
 from aegir.file import check_constructors, load, load_stream
 
-__version__ = "1.0.1"
+__version__ = "1.0.2"
 
 __all__ = (
     # Main API
